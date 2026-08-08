@@ -87,6 +87,7 @@ add_executable(cavex
 
 				source/game/gui/screen_ingame.c
 				source/game/gui/screen_load_world.c
+				source/game/gui/screen_main.c
 				source/game/gui/screen_select_world.c
 				source/game/gui/screen_inventory.c
 				source/game/gui/screen_crafting.c
@@ -142,6 +143,8 @@ add_executable(cavex
 				source/lodepng/lodepng.c
 
 				source/parson/parson.c
+
+				source/ini/ini.c
 			)
 
 target_compile_definitions(cavex PRIVATE PLATFORM_PC CGLM_ALL_UNALIGNED)

@@ -114,23 +114,23 @@ void camera_physics(struct camera* c, float dt) {
 	float speed_c = 40.0F;
 	float air_friction = 0.05F;
 
-	if(input_held(IB_LEFT)) {
+	if(input_held(IB_LEFT) || input_held(IB_JS_LEFT)) {
 		acc_x += cos(c->rx) * speed_c;
 		acc_z -= sin(c->rx) * speed_c;
 	}
 
-	if(input_held(IB_RIGHT)) {
+	if(input_held(IB_RIGHT) || input_held(IB_JS_RIGHT)) {
 		acc_x -= cos(c->rx) * speed_c;
 		acc_z += sin(c->rx) * speed_c;
 	}
 
-	if(input_held(IB_FORWARD)) {
+	if(input_held(IB_FORWARD) || input_held(IB_JS_FORWARD)) {
 		acc_x += sin(c->rx) * sin(c->ry) * speed_c;
 		acc_y += cos(c->ry) * speed_c;
 		acc_z += cos(c->rx) * sin(c->ry) * speed_c;
 	}
 
-	if(input_held(IB_BACKWARD)) {
+	if(input_held(IB_BACKWARD) || input_held(IB_JS_BACKWARD)) {
 		acc_x -= sin(c->rx) * sin(c->ry) * speed_c;
 		acc_y -= cos(c->ry) * speed_c;
 		acc_z -= cos(c->rx) * sin(c->ry) * speed_c;

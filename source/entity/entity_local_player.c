@@ -81,16 +81,16 @@ static bool entity_tick(struct entity* e) {
 	bool jumping = false;
 
 	if(e->data.local_player.capture_input) {
-		if(input_held(IB_FORWARD))
+		if(input_held(IB_FORWARD) || input_held(IB_JS_FORWARD))
 			forward++;
 
-		if(input_held(IB_BACKWARD))
+		if(input_held(IB_BACKWARD) || input_held(IB_JS_BACKWARD))
 			forward--;
 
-		if(input_held(IB_RIGHT))
+		if(input_held(IB_RIGHT) || input_held(IB_JS_RIGHT))
 			strafe++;
 
-		if(input_held(IB_LEFT))
+		if(input_held(IB_LEFT) || input_held(IB_JS_LEFT))
 			strafe--;
 
 		jumping = input_held(IB_JUMP);

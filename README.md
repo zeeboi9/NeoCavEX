@@ -12,18 +12,17 @@
 * many items from the original
 * correct light propagation
 * ambient occlusion on blocks
+* configurable buttons
 
 ---
 
 **Planned features** *(in no particular order, not complete)*
 * main menu
+* UI for settings
+* gamecube controller support
+* sound
 * generation of new chunks
 * biome colors
-* ~~player physics~~
-* ~~inventory management~~
-* ~~block placement~~ and destruction logic
-* ~~(random)~~ block updates
-* ~~item actions~~
 * real texture pack support
 * Beta 1.7.3 multiplayer support
 
@@ -43,6 +42,7 @@ You need to download these libraries yourself and place their source files to th
 | [cNBT](https://github.com/chmod222/cNBT) | `buffer.c`, `buffer.h`, `list.h`, `nbt_loading.c`, `nbt_parsing.c`, `nbt_treeops.c`, `nbt_util.c` and `nbt.h` | `source/cNBT/` |
 | [parson](https://github.com/kgabis/parson) | `parson.h` and `parson.c` | `source/parson/` |
 | [M*LIB](https://github.com/P-p-H-d/mlib) | any root `*.h` | compiler include path |
+| [ini](https://github.com/rxi/ini) | 'ini.h' and 'ini.c' | source/ini | 
 
 ### Wii
 
@@ -72,6 +72,7 @@ cavex
 ├── saves
 │   ├── world
 │   └── ...
+├── config
 ├── boot.dol
 ├── config.json
 ├── icon.png

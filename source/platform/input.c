@@ -17,6 +17,9 @@
 	along with CavEX.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
+
+
 #include <assert.h>
 
 #include "../cglm/cglm.h"
@@ -120,30 +123,78 @@ void input_native_joystick(float dt, float* dx, float* dy) {
 
 #ifdef PLATFORM_WII
 
+
+#include "../game/game_state.h"
+#include "../ini/ini.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <math.h>
+
 #include <wiiuse/wpad.h>
+#include <gccore.h>
+
+
+struct ini_t {
+  char *data;
+  char *end;
+};
 
 static struct {
 	float dx, dy;
 	float magnitude;
 	bool available;
-} joystick_input[3];
+} joystick_input[5];
 
-static bool js_emulated_btns_prev[3][4];
-static bool js_emulated_btns_held[3][4];
+
+static bool js_emulated_btns_prev[5][4];
+static bool js_emulated_btns_held[5][4];
+
+extern ini_t *configfile;
+
+int i;
+int activePad = 0;
+u16 keysHeld[4] = {0, 0, 0, 0};
+
 
 void input_init() {
+
 	WPAD_Init();
+	PAD_Init();
+
 	WPAD_SetDataFormat(WPAD_CHAN_0, WPAD_FMT_BTNS_ACC_IR);
 	WPAD_SetVRes(WPAD_CHAN_0, gfx_width(), gfx_height());
 
 	for(int k = 0; k < 4; k++) {
-		for(int j = 0; j < 3; j++)
+		for(int j = 0; j < 5; j++)
 			js_emulated_btns_prev[j][k] = js_emulated_btns_held[j][k] = false;
 	}
+
+
 }
+
 
 void input_poll() {
 	WPAD_ScanPads();
+	PAD_ScanPads();
+
+    if(configfile == NULL){
+		ini_free(configfile);
+		gstate.quit = true;
+	}
+
+
+        for (int i = 0; i < 4; i++) {
+            PAD_ControlMotor(i, 0);
+            keysHeld[i] = PAD_ButtonsHeld(i);
+			if (keysHeld[i] != 0) {
+                PAD_ControlMotor(activePad, PAD_MOTOR_STOP);
+                activePad = i;
+            }
+        }
+
 
 	expansion_t e;
 	WPAD_Expansion(WPAD_CHAN_0, &e);
@@ -171,11 +222,28 @@ void input_poll() {
 		joystick_input[1].available = joystick_input[2].available = false;
 	}
 
-	for(int j = 0; j < 3; j++) {
+	if(activePad != 0) {
+		float angle = atan2(PAD_StickY(activePad), PAD_StickX(activePad));
+		float anglesub = atan2(PAD_SubStickY(activePad), PAD_SubStickX(activePad));
+		joystick_input[3].dx = sin(angle);
+		joystick_input[3].dy = cos(angle);
+		joystick_input[3].magnitude = hypotf(PAD_StickX(activePad), PAD_StickY(activePad));
+		joystick_input[3].available = true;
+
+		joystick_input[4].dx = sin(anglesub);
+		joystick_input[4].dy = cos(anglesub);
+		joystick_input[4].magnitude = hypotf(PAD_SubStickX(activePad), PAD_SubStickY(activePad));
+		joystick_input[4].available = true;
+	} else {
+		joystick_input[3].available = joystick_input[4].available = false;
+	}
+
+	for(int j = 0; j < 5; j++) {
 		for(int k = 0; k < 4; k++) {
 			js_emulated_btns_prev[j][k] = js_emulated_btns_held[j][k];
 			js_emulated_btns_held[j][k] = false;
 		}
+
 
 		if(joystick_input[j].available) {
 			float x = joystick_input[j].dx * joystick_input[j].magnitude;
@@ -196,8 +264,17 @@ void input_poll() {
 	}
 }
 
-static uint32_t input_wpad_translate(int key) {
-	switch(key) {
+
+
+
+
+uint32_t input_converter(char *type, char *button){
+
+	int val = 520;
+
+	ini_sget(configfile, type, button, "%d", &val);
+
+	switch(val){
 		case 0: return WPAD_BUTTON_UP;
 		case 1: return WPAD_BUTTON_DOWN;
 		case 2: return WPAD_BUTTON_LEFT;
@@ -209,58 +286,186 @@ static uint32_t input_wpad_translate(int key) {
 		case 8: return WPAD_BUTTON_PLUS;
 		case 9: return WPAD_BUTTON_MINUS;
 		case 10: return WPAD_BUTTON_HOME;
+		case 11: return WPAD_NUNCHUK_BUTTON_Z;
+		case 12: return WPAD_NUNCHUK_BUTTON_C;
+		case 100: return WPAD_CLASSIC_BUTTON_UP;
+		case 101: return WPAD_CLASSIC_BUTTON_DOWN;
+		case 102: return WPAD_CLASSIC_BUTTON_LEFT;
+		case 103: return WPAD_CLASSIC_BUTTON_RIGHT;
+		case 104: return WPAD_CLASSIC_BUTTON_A;
+		case 105: return WPAD_CLASSIC_BUTTON_B;
+		case 106: return WPAD_CLASSIC_BUTTON_X;
+		case 107: return WPAD_CLASSIC_BUTTON_Y;
+		case 108: return WPAD_CLASSIC_BUTTON_ZL;
+		case 109: return WPAD_CLASSIC_BUTTON_ZR;
+		case 110: return WPAD_CLASSIC_BUTTON_FULL_L;
+		case 111: return WPAD_CLASSIC_BUTTON_FULL_R;
+		case 112: return WPAD_CLASSIC_BUTTON_PLUS;
+		case 113: return WPAD_CLASSIC_BUTTON_MINUS;
+		case 114: return WPAD_CLASSIC_BUTTON_HOME;
+		case 200: return PAD_BUTTON_LEFT;
+		case 201: return PAD_BUTTON_RIGHT;
+		case 202: return PAD_BUTTON_DOWN;
+		case 203: return PAD_BUTTON_UP;
+		case 204: return PAD_TRIGGER_Z;
+		case 205: return PAD_TRIGGER_R;
+		case 206: return PAD_TRIGGER_L;
+		case 207: return PAD_BUTTON_A;
+		case 208: return PAD_BUTTON_B;
+		case 209: return PAD_BUTTON_X;
+		case 210: return PAD_BUTTON_Y;
+		case 211: return PAD_BUTTON_MENU;
+		case 212: return PAD_BUTTON_START;
 		default: break;
-	}
 
+	}
+	return 0;
+
+}
+
+
+
+
+
+
+uint32_t input_wpad_translate(enum input_button key) {
 	expansion_t e;
 	WPAD_Expansion(WPAD_CHAN_0, &e);
 
+
 	if(e.type == WPAD_EXP_NUNCHUK) {
 		switch(key) {
-			case 100: return WPAD_NUNCHUK_BUTTON_Z;
-			case 101: return WPAD_NUNCHUK_BUTTON_C;
+			case IB_ACTION1:      return input_converter("wiimote", "action1-wiimote");
+		    case IB_ACTION2:      return input_converter("wiimote", "action2-wiimote");
+		    case IB_FORWARD:      return input_converter("wiimote", "forward-wiimote");
+		    case IB_BACKWARD:     return input_converter("wiimote", "backward-wiimote");
+		    case IB_LEFT:         return input_converter("wiimote", "left-wiimote");
+		    case IB_RIGHT:        return input_converter("wiimote", "right-wiimote");
+		    case IB_JUMP:         return input_converter("wiimote", "jump-wiimote");
+		    case IB_SNEAK:        return input_converter("wiimote", "sneak-wiimote");
+		    case IB_INVENTORY:    return input_converter("wiimote", "inventory-wiimote");
+		    case IB_HOME:         return input_converter("wiimote", "home-wiimote");
+		    case IB_SCROLL_LEFT:  return input_converter("wiimote", "scroll-left-wiimote");
+		    case IB_SCROLL_RIGHT: return input_converter("wiimote", "scroll-right-wiimote");
+		    case IB_GUI_UP:       return input_converter("wiimote", "gui-up-wiimote");
+		    case IB_GUI_DOWN:     return input_converter("wiimote", "gui-down-wiimote");
+		    case IB_GUI_LEFT:     return input_converter("wiimote", "gui-left-wiimote");
+		    case IB_GUI_RIGHT:    return input_converter("wiimote", "gui-right-wiimote");
+		    case IB_GUI_CLICK:    return input_converter("wiimote", "gui-click-wiimote");
+		    case IB_GUI_CLICK_ALT:return input_converter("wiimote", "gui-click-alt-wiimote");
+		    case IB_SCREENSHOT:   return input_converter("wiimote", "screenshot-wiimote");
 			default: break;
+
 		}
 	} else if(e.type == WPAD_EXP_CLASSIC) {
 		switch(key) {
-			case 200: return WPAD_CLASSIC_BUTTON_UP;
-			case 201: return WPAD_CLASSIC_BUTTON_DOWN;
-			case 202: return WPAD_CLASSIC_BUTTON_LEFT;
-			case 203: return WPAD_CLASSIC_BUTTON_RIGHT;
-			case 204: return WPAD_CLASSIC_BUTTON_A;
-			case 205: return WPAD_CLASSIC_BUTTON_B;
-			case 206: return WPAD_CLASSIC_BUTTON_X;
-			case 207: return WPAD_CLASSIC_BUTTON_Y;
-			case 208: return WPAD_CLASSIC_BUTTON_ZL;
-			case 209: return WPAD_CLASSIC_BUTTON_ZR;
-			case 210: return WPAD_CLASSIC_BUTTON_FULL_L;
-			case 211: return WPAD_CLASSIC_BUTTON_FULL_R;
-			case 212: return WPAD_CLASSIC_BUTTON_PLUS;
-			case 213: return WPAD_CLASSIC_BUTTON_MINUS;
-			case 214: return WPAD_CLASSIC_BUTTON_HOME;
-			default: break;
-		}
-	} else if(e.type == WPAD_EXP_GUITARHERO3) {
-		switch(key) {
-			case 300: return WPAD_GUITAR_HERO_3_BUTTON_YELLOW;
-			case 301: return WPAD_GUITAR_HERO_3_BUTTON_GREEN;
-			case 302: return WPAD_GUITAR_HERO_3_BUTTON_BLUE;
-			case 303: return WPAD_GUITAR_HERO_3_BUTTON_RED;
-			case 304: return WPAD_GUITAR_HERO_3_BUTTON_ORANGE;
-			case 305: return WPAD_GUITAR_HERO_3_BUTTON_PLUS;
-			case 306: return WPAD_GUITAR_HERO_3_BUTTON_MINUS;
-			case 307: return WPAD_GUITAR_HERO_3_BUTTON_STRUM_UP;
-			case 308: return WPAD_GUITAR_HERO_3_BUTTON_STRUM_DOWN;
-			default: break;
+			case IB_ACTION1: return input_converter("classic", "action1-classic");
+		    case IB_ACTION2: return input_converter("classic", "action2-classic");
+		    case IB_FORWARD: return input_converter("classic", "forward-classic");
+		    case IB_BACKWARD: return input_converter("classic", "backward-classic");
+		    case IB_LEFT: return input_converter("classic", "left-classic");
+		    case IB_RIGHT: return input_converter("classic", "right-classic");
+		    case IB_JUMP: return input_converter("classic", "jump-classic");
+		    case IB_SNEAK: return input_converter("classic", "sneak-classic");
+		    case IB_INVENTORY: return input_converter("classic", "inventory-classic");
+		    case IB_HOME: return input_converter("classic", "home-classic");
+		    case IB_SCROLL_LEFT: return input_converter("classic", "scroll-left-classic");
+		    case IB_SCROLL_RIGHT: return input_converter("classic", "scroll-right-classic");
+		    case IB_GUI_UP: return input_converter("classic", "gui-up-classic");
+		    case IB_GUI_DOWN: return input_converter("classic", "gui-down-classic");
+		    case IB_GUI_LEFT: return input_converter("classic", "gui-left-classic");
+		    case IB_GUI_RIGHT: return input_converter("classic", "gui-right-classic");
+		    case IB_GUI_CLICK: return input_converter("classic", "gui-click-classic");
+		    case IB_GUI_CLICK_ALT: return input_converter("classic", "gui-click-alt-classic");
+		    case IB_SCREENSHOT: return input_converter("classic", "screenshot-classic");
+            default: break;
 		}
 	}
 
+	if (activePad != 0)  {
+		switch(key) {
+			case IB_ACTION1: return input_converter("gamecube", "action1-gc");
+			case IB_ACTION2: return input_converter("gamecube", "action2-gc");
+			case IB_FORWARD: return input_converter("gamecube", "forward-gc");
+			case IB_BACKWARD: return input_converter("gamecube", "backward-gc");
+			case IB_LEFT: return input_converter("gamecube", "left-gc");
+			case IB_RIGHT: return input_converter("gamecube", "right-gc");
+			case IB_JUMP: return input_converter("gamecube", "jump-gc");
+			case IB_SNEAK: return input_converter("gamecube", "sneak-gc");
+			case IB_INVENTORY: return input_converter("gamecube", "inventory-gc");
+			case IB_HOME: return input_converter("gamecube", "home-gc");
+			case IB_SCROLL_LEFT: return input_converter("gamecube", "scroll-left-gc");
+			case IB_SCROLL_RIGHT: return input_converter("gamecube", "scroll-right-gc");
+			case IB_GUI_UP: return input_converter("gamecube", "gui-up-gc");
+			case IB_GUI_DOWN: return input_converter("gamecube", "gui-down-gc");
+			case IB_GUI_LEFT: return input_converter("gamecube", "gui-left-gc");
+			case IB_GUI_RIGHT: return input_converter("gamecube", "gui-right-gc");
+			case IB_GUI_CLICK: return input_converter("gamecube", "gui-click-gc");
+			case IB_GUI_CLICK_ALT: return input_converter("gamecube", "gui-click-alt-gc");
+			case IB_SCREENSHOT: return input_converter("gamecube", "screenshot-gc");
+			default: break;
+		}
+	}
+	return -1;
+
+}
+
+
+
+
+
+int input_JS_translate(enum input_button key) {
+	expansion_t e;
+	WPAD_Expansion(WPAD_CHAN_0, &e);
+
+
+	if(e.type == WPAD_EXP_NUNCHUK) {
+		switch(key) {
+			case IB_JS_GUI_UP: return 900;
+			case IB_JS_GUI_DOWN: return 901;
+			case IB_JS_GUI_LEFT: return 902;
+			case IB_JS_GUI_RIGHT: return 903;
+			default: break;
+
+		}
+	} else if(e.type == WPAD_EXP_CLASSIC) {
+		switch(key) {
+			case IB_JS_FORWARD: return 910;
+			case IB_JS_BACKWARD: return 911;
+			case IB_JS_LEFT: return 912;
+			case IB_JS_RIGHT: return 913;
+			case IB_JS_GUI_UP: return 920;
+			case IB_JS_GUI_DOWN: return 921;
+			case IB_JS_GUI_LEFT: return 922;
+			case IB_JS_GUI_RIGHT: return 923;
+            default: break;
+		}
+	} else if(activePad != 0){
+		switch(key) {
+			case IB_JS_FORWARD: return 930;
+			case IB_JS_BACKWARD: return 931;
+			case IB_JS_LEFT: return 932;
+			case IB_JS_RIGHT: return 933;
+			case IB_JS_GUI_UP: return 940;
+			case IB_JS_GUI_DOWN: return 941;
+			case IB_JS_GUI_LEFT: return 942;
+			case IB_JS_GUI_RIGHT: return 943;
+			default: break;
+		}
+	}
 	return 0;
 }
 
-void input_native_key_status(int key, bool* pressed, bool* released,
-							 bool* held) {
-	if(key >= 900 && key < 924) {
+
+
+
+
+void input_native_key_status(enum input_button b, bool* pressed, bool* released, bool* held) {
+	expansion_t e;
+	WPAD_Expansion(WPAD_CHAN_0, &e);
+	int key =  input_JS_translate(b);
+
+	if(key >= 900 && key < 944) {
 		int js = (key - 900) / 10;
 		int offset = (key - 900) % 10;
 		if(offset < 4) {
@@ -274,11 +479,108 @@ void input_native_key_status(int key, bool* pressed, bool* released,
 		}
 	}
 
-	*pressed = WPAD_ButtonsDown(WPAD_CHAN_0) & input_wpad_translate(key);
-	*released = WPAD_ButtonsUp(WPAD_CHAN_0) & input_wpad_translate(key);
-	*held = !(*pressed) && !(*released)
-		&& WPAD_ButtonsHeld(WPAD_CHAN_0) & input_wpad_translate(key);
+	if(e.type == WPAD_EXP_CLASSIC || e.type == WPAD_EXP_NUNCHUK){
+		*pressed = WPAD_ButtonsDown(WPAD_CHAN_0) & input_wpad_translate(b);
+		*released = WPAD_ButtonsUp(WPAD_CHAN_0) & input_wpad_translate(b);
+		*held = !(*pressed) && !(*released)
+			&& WPAD_ButtonsHeld(WPAD_CHAN_0) & input_wpad_translate(b);
+	}else if(keysHeld[i] != 0){
+		*pressed = PAD_ButtonsDown(activePad) & input_wpad_translate(b);
+		*released = PAD_ButtonsUp(activePad) & input_wpad_translate(b);
+		*held = !(*pressed) && !(*released)
+			&& PAD_ButtonsHeld(activePad) & input_wpad_translate(b);
+	}
+
+
 }
+
+
+
+
+int input_symbol_translate(enum input_button key) {
+	expansion_t e;
+	WPAD_Expansion(WPAD_CHAN_0, &e);
+
+	int sym = -1;
+
+	if(e.type == WPAD_EXP_NUNCHUK) {
+		switch(key) {
+			case IB_ACTION1: ini_sget(configfile, "wiimote", "action1-wiimote", "%d", &sym); break;
+		    case IB_ACTION2: ini_sget(configfile, "wiimote", "action2-wiimote", "%d", &sym); break;
+		    case IB_FORWARD: ini_sget(configfile, "wiimote", "forward-wiimote", "%d", &sym); break;
+		    case IB_BACKWARD: ini_sget(configfile, "wiimote", "backward-wiimote", "%d", &sym); break;
+		    case IB_LEFT: ini_sget(configfile, "wiimote", "left-wiimote", "%d", &sym); break;
+		    case IB_RIGHT: ini_sget(configfile, "wiimote", "right-wiimote", "%d", &sym); break;
+		    case IB_JUMP: ini_sget(configfile, "wiimote", "jump-wiimote", "%d", &sym); break;
+		    case IB_SNEAK: ini_sget(configfile, "wiimote", "sneak-wiimote", "%d", &sym); break;
+		    case IB_INVENTORY: ini_sget(configfile, "wiimote", "inventory-wiimote", "%d", &sym); break;
+		    case IB_HOME: ini_sget(configfile, "wiimote", "home-wiimote", "%d", &sym); break;
+		    case IB_SCROLL_LEFT: ini_sget(configfile, "wiimote", "scroll-left-wiimote", "%d", &sym); break;
+		    case IB_SCROLL_RIGHT: ini_sget(configfile, "wiimote", "scroll-right-wiimote", "%d", &sym); break;
+		    case IB_GUI_UP: ini_sget(configfile, "wiimote", "gui-up-wiimote", "%d", &sym); break;
+		    case IB_GUI_DOWN: ini_sget(configfile, "wiimote", "gui-down-wiimote", "%d", &sym); break;
+		    case IB_GUI_LEFT: ini_sget(configfile, "wiimote", "gui-left-wiimote", "%d", &sym); break;
+		    case IB_GUI_RIGHT: ini_sget(configfile, "wiimote",  "gui-right-wiimote", "%d", &sym); break;
+		    case IB_GUI_CLICK: ini_sget(configfile, "wiimote", "gui-click-wiimote", "%d", &sym); break;
+		    case IB_GUI_CLICK_ALT: ini_sget(configfile, "wiimote", "gui-click-alt-wiimote", "%d", &sym); break;
+		    case IB_SCREENSHOT: ini_sget(configfile, "wiimote", "screenshot-wiimote", "%d", &sym); break;
+			default: break;
+	    }
+	}
+	if(e.type == WPAD_EXP_CLASSIC) {
+		switch(key) {
+			case IB_ACTION1: ini_sget(configfile, "classic", "action1-classic", "%d", &sym); break;
+		    case IB_ACTION2: ini_sget(configfile, "classic", "action2-classic", "%d", &sym); break;
+		    case IB_FORWARD: ini_sget(configfile, "classic", "forward-classic", "%d", &sym); break;
+		    case IB_BACKWARD: ini_sget(configfile, "classic", "backward-classic", "%d", &sym); break;
+			case IB_LEFT: ini_sget(configfile, "classic", "left-classic", "%d", &sym); break;
+			case IB_RIGHT: ini_sget(configfile, "classic", "right-classic", "%d", &sym); break;
+			case IB_JUMP: ini_sget(configfile, "classic", "jump-classic", "%d", &sym); break;
+			case IB_SNEAK: ini_sget(configfile, "classic", "sneak-classic", "%d", &sym); break;
+			case IB_INVENTORY: ini_sget(configfile, "classic", "inventory-classic", "%d", &sym); break;
+			case IB_HOME: ini_sget(configfile, "classic", "home-classic", "%d", &sym); break;
+			case IB_SCROLL_LEFT: ini_sget(configfile, "classic", "scroll-left-classic", "%d", &sym); break;
+			case IB_SCROLL_RIGHT: ini_sget(configfile, "classic", "scroll-right-classic", "%d", &sym); break;
+			case IB_GUI_UP: ini_sget(configfile, "classic", "gui-up-classic", "%d", &sym); break;
+			case IB_GUI_DOWN: ini_sget(configfile, "classic", "gui-down-classic", "%d", &sym); break;
+			case IB_GUI_LEFT: ini_sget(configfile, "classic", "gui-left-classic", "%d", &sym); break;
+			case IB_GUI_RIGHT: ini_sget(configfile, "classic",  "gui-right-classic", "%d", &sym); break;
+			case IB_GUI_CLICK: ini_sget(configfile, "classic", "gui-click-classic", "%d", &sym); break;
+			case IB_GUI_CLICK_ALT: ini_sget(configfile, "classic", "gui-click-alt-classic", "%d", &sym); break;
+			case IB_SCREENSHOT: ini_sget(configfile, "classic", "screenshot-classic", "%d", &sym); break;
+		default: break;
+
+		}
+    }
+	else if(keysHeld[i] != 0) {
+		switch(key) {
+			case IB_ACTION1: ini_sget(configfile, "gamecube", "action1-gc", "%d", &sym); break;
+			case IB_ACTION2: ini_sget(configfile, "gamecube", "action2-gc", "%d", &sym); break;
+			case IB_FORWARD: ini_sget(configfile, "gamecube", "forward-gc", "%d", &sym); break;
+			case IB_BACKWARD: ini_sget(configfile, "gamecube", "backward-gc", "%d", &sym); break;
+			case IB_LEFT: ini_sget(configfile, "gamecube", "left-gc", "%d", &sym); break;
+			case IB_RIGHT: ini_sget(configfile, "gamecube", "right-gc", "%d", &sym); break;
+			case IB_JUMP: ini_sget(configfile, "gamecube", "jump-gc", "%d", &sym); break;
+			case IB_SNEAK: ini_sget(configfile, "gamecube", "sneak-gc", "%d", &sym); break;
+			case IB_INVENTORY: ini_sget(configfile, "gamecube", "inventory-gc", "%d", &sym); break;
+			case IB_HOME: ini_sget(configfile, "gamecube", "home-gc", "%d", &sym); break;
+			case IB_SCROLL_LEFT: ini_sget(configfile, "gamecube", "scroll-left-gc", "%d", &sym); break;
+			case IB_SCROLL_RIGHT: ini_sget(configfile, "gamecube", "scroll-right-gc", "%d", &sym); break;
+			case IB_GUI_UP: ini_sget(configfile, "gamecube", "gui-up-gc", "%d", &sym); break;
+			case IB_GUI_DOWN: ini_sget(configfile, "gamecube", "gui-down-gc", "%d", &sym); break;
+			case IB_GUI_LEFT: ini_sget(configfile, "gamecube", "gui-left-gc", "%d", &sym); break;
+			case IB_GUI_RIGHT: ini_sget(configfile, "gamecube", "gui-right-gc", "%d", &sym); break;
+			case IB_GUI_CLICK: ini_sget(configfile, "gamecube", "gui-click-gc", "%d", &sym); break;
+			case IB_GUI_CLICK_ALT: ini_sget(configfile, "gamecube", "gui-click-alt-gc", "%d", &sym); break;
+			case IB_SCREENSHOT: ini_sget(configfile, "gamecube", "screenshot-gc", "%d", &sym); break;
+			default: break;
+		}
+	}
+	return sym;
+
+
+}
+
 
 bool input_native_key_symbol(int key, int* symbol, int* symbol_help,
 							 enum input_category* category, int* priority) {
@@ -303,17 +605,15 @@ bool input_native_key_symbol(int key, int* symbol, int* symbol_help,
 		return true;
 	}
 
-	if(key < 0 || key > 308)
+	if(key < -1 || key > 213)
 		return false;
 
 	int symbols[] = {
 		[0] = 25,	[1] = 26,	[2] = 27,	[3] = 28,	[4] = 0,	[5] = 1,
-		[6] = 2,	[7] = 3,	[8] = 5,	[9] = 6,	[10] = 4,	[100] = 8,
-		[101] = 9,	[200] = 25, [201] = 26, [202] = 27, [203] = 28, [204] = 10,
-		[205] = 11, [206] = 12, [207] = 13, [208] = 14, [209] = 15, [210] = 22,
-		[211] = 23, [212] = 5,	[213] = 6,	[214] = 4,	[300] = 7,	[301] = 7,
-		[302] = 7,	[303] = 7,	[304] = 7,	[305] = 5,	[306] = 6,	[307] = 7,
-		[308] = 7,
+		[6] = 2,	[7] = 3,	[8] = 5,	[9] = 6,	[10] = 4,	[11] = 8,
+		[12] = 9,	[100] = 25, [101] = 26, [102] = 27, [103] = 28, [104] = 10,
+		[105] = 11, [106] = 12, [107] = 13, [108] = 14, [109] = 15, [110] = 22,
+		[111] = 23, [112] = 5,	[113] = 6,	[114] = 4,
 	};
 
 	*category = INPUT_CAT_NONE;
@@ -321,11 +621,14 @@ bool input_native_key_symbol(int key, int* symbol, int* symbol_help,
 	if(key >= 0 && key <= 10)
 		*category = INPUT_CAT_WIIMOTE;
 
-	if(key >= 100 && key <= 101)
+	if(key >= 11 && key <= 12)
 		*category = INPUT_CAT_NUNCHUK;
 
-	if(key >= 200 && key <= 214)
+	if(key >= 100 && key <= 114)
 		*category = INPUT_CAT_CLASSIC_CONTROLLER;
+
+	if(key >= 200 && key <= 212)
+		*category = INPUT_CAT_GC;
 
 	*symbol = symbols[key];
 	*symbol_help = symbols[key];
@@ -347,9 +650,17 @@ bool input_native_key_symbol(int key, int* symbol, int* symbol_help,
 	return true;
 }
 
+
+
+
+
 bool input_native_key_any(int* key) {
 	return false;
 }
+
+
+
+
 
 void input_pointer_enable(bool enable) { }
 
@@ -380,77 +691,42 @@ void input_native_joystick(float dt, float* dx, float* dy) {
 
 #include "../game/game_state.h"
 
-static const char* input_config_translate(enum input_button key) {
-	switch(key) {
-		case IB_ACTION1: return "input.item_action_left";
-		case IB_ACTION2: return "input.item_action_right";
-		case IB_FORWARD: return "input.player_forward";
-		case IB_BACKWARD: return "input.player_backward";
-		case IB_LEFT: return "input.player_left";
-		case IB_RIGHT: return "input.player_right";
-		case IB_JUMP: return "input.player_jump";
-		case IB_SNEAK: return "input.player_sneak";
-		case IB_INVENTORY: return "input.inventory";
-		case IB_HOME: return "input.open_menu";
-		case IB_SCROLL_LEFT: return "input.scroll_left";
-		case IB_SCROLL_RIGHT: return "input.scroll_right";
-		case IB_GUI_UP: return "input.gui_up";
-		case IB_GUI_DOWN: return "input.gui_down";
-		case IB_GUI_LEFT: return "input.gui_left";
-		case IB_GUI_RIGHT: return "input.gui_right";
-		case IB_GUI_CLICK: return "input.gui_click";
-		case IB_GUI_CLICK_ALT: return "input.gui_click_alt";
-		case IB_SCREENSHOT: return "input.screenshot";
-		default: return NULL;
-	}
-}
+
 
 bool input_symbol(enum input_button b, int* symbol, int* symbol_help,
 				  enum input_category* category) {
-	const char* key = input_config_translate(b);
 
-	if(!key)
-		return false;
+	int translate_key = input_symbol_translate(b);
 
-	size_t length = 8;
-	int mapping[length];
-
-	if(!config_read_int_array(&gstate.config_user, input_config_translate(b),
-							  mapping, &length))
+	if(translate_key == -1)
 		return false;
 
 	int priority = 0;
 	bool has_any = false;
 
-	for(size_t k = 0; k < length; k++) {
-		int symbol_tmp, symbol_help_tmp, priority_tmp;
-		enum input_category category_tmp;
-		if(input_native_key_symbol(mapping[k], &symbol_tmp, &symbol_help_tmp,
-								   &category_tmp, &priority_tmp)
-		   && priority_tmp > priority) {
-			priority = priority_tmp;
-			*symbol = symbol_tmp;
-			*symbol_help = symbol_help_tmp;
-			*category = category_tmp;
-			has_any = true;
-		}
+
+	int symbol_tmp, symbol_help_tmp, priority_tmp;
+	enum input_category category_tmp;
+	if(input_native_key_symbol(translate_key, &symbol_tmp, &symbol_help_tmp, &category_tmp, &priority_tmp)
+		&& priority_tmp > priority) {
+		priority = priority_tmp;
+		*symbol = symbol_tmp;
+		*symbol_help = symbol_help_tmp;
+		*category = category_tmp;
+		has_any = true;
+		return has_any;
+	}else{
+		return false;
 	}
 
-	return has_any;
+
+
 }
 
 bool input_pressed(enum input_button b) {
-	const char* key = input_config_translate(b);
-
-	if(!key)
-		return false;
 
 	size_t length = 8;
-	int mapping[length];
 
-	if(!config_read_int_array(&gstate.config_user, input_config_translate(b),
-							  mapping, &length))
-		return false;
 
 	bool any_pressed = false;
 	bool any_held = false;
@@ -458,7 +734,8 @@ bool input_pressed(enum input_button b) {
 
 	for(size_t k = 0; k < length; k++) {
 		bool pressed, released, held;
-		input_native_key_status(mapping[k], &pressed, &released, &held);
+        input_native_key_status(b, &pressed, &released, &held);
+
 		if(pressed)
 			any_pressed = true;
 		if(released)
@@ -471,17 +748,9 @@ bool input_pressed(enum input_button b) {
 }
 
 bool input_released(enum input_button b) {
-	const char* key = input_config_translate(b);
-
-	if(!key)
-		return false;
 
 	size_t length = 8;
-	int mapping[length];
 
-	if(!config_read_int_array(&gstate.config_user, input_config_translate(b),
-							  mapping, &length))
-		return false;
 
 	bool any_pressed = false;
 	bool any_held = false;
@@ -489,7 +758,8 @@ bool input_released(enum input_button b) {
 
 	for(size_t k = 0; k < length; k++) {
 		bool pressed, released, held;
-		input_native_key_status(mapping[k], &pressed, &released, &held);
+        input_native_key_status(b, &pressed, &released, &held);
+
 		if(pressed)
 			any_pressed = true;
 		if(released)
@@ -502,24 +772,17 @@ bool input_released(enum input_button b) {
 }
 
 bool input_held(enum input_button b) {
-	const char* key = input_config_translate(b);
-
-	if(!key)
-		return false;
 
 	size_t length = 8;
-	int mapping[length];
 
-	if(!config_read_int_array(&gstate.config_user, input_config_translate(b),
-							  mapping, &length))
-		return false;
 
 	bool any_pressed = false;
 	bool any_held = false;
 
 	for(size_t k = 0; k < length; k++) {
 		bool pressed, released, held;
-		input_native_key_status(mapping[k], &pressed, &released, &held);
+        input_native_key_status(b, &pressed, &released, &held);
+
 		if(pressed)
 			any_pressed = true;
 		if(held)
@@ -529,7 +792,7 @@ bool input_held(enum input_button b) {
 	return any_pressed || any_held;
 }
 
-bool input_joystick(float dt, float* x, float* y) {
+bool input_joystick (float dt, float* x, float* y) {
 	input_native_joystick(dt, x, y);
 	return true;
 }

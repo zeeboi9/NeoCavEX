@@ -17,6 +17,8 @@
 	along with CavEX.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
+
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -26,6 +28,11 @@
 
 #ifdef PLATFORM_WII
 #include <fat.h>
+#include "ini/ini.h"
+struct ini_t {
+  char *data;
+  char *end;
+};
 #endif
 
 #include "chunk_mesher.h"
@@ -43,9 +50,12 @@
 #include "platform/input.h"
 #include "world.h"
 
+
 #include "cNBT/nbt.h"
 #include "cglm/cglm.h"
 #include "lodepng/lodepng.h"
+
+ini_t *configfile = NULL;
 
 int main(void) {
 	gstate.quit = false;
@@ -64,6 +74,7 @@ int main(void) {
 
 #ifdef PLATFORM_WII
 	fatInitDefault();
+	configfile = ini_load("sd:/apps/cavex/settings/controls.ini");
 #endif
 
 	config_create(&gstate.config_user, "config.json");
@@ -74,6 +85,7 @@ int main(void) {
 	recipe_init();
 	gfx_setup();
 	gutil_init();
+
 
 	screen_set(&screen_select_world);
 
@@ -242,7 +254,7 @@ int main(void) {
 				gfx_copy_framebuffer(image, &width, &height);
 
 				char name[64];
-				snprintf(name, sizeof(name), "%ld.png", (long)time(NULL));
+				snprintf(name, sizeof(name), "screenshots/%ld.png", (long)time(NULL));
 
 				lodepng_encode32_file(name, image, width, height);
 				free(image);

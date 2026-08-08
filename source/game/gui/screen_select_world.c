@@ -44,6 +44,8 @@ static int height_visible;
 static int entry_height = 72;
 static int side_padding = 4;
 
+
+
 struct world_option {
 	string_t name;
 	string_t directory;
@@ -126,11 +128,15 @@ static void screen_sworld_reset(struct screen* s, int width, int height) {
 }
 
 static void screen_sworld_update(struct screen* s, float dt) {
-	if(input_pressed(IB_GUI_UP) && gui_selection > 0)
+	if(input_pressed(IB_GUI_UP) && gui_selection > 0 || input_pressed(IB_JS_GUI_UP) && gui_selection > 0)
 		gui_selection--;
 
-	if(input_pressed(IB_GUI_DOWN) && gui_selection < stack_size(worlds) - 1)
+
+
+	if(input_pressed(IB_GUI_DOWN) && gui_selection < stack_size(worlds) - 1 || input_pressed(IB_JS_GUI_DOWN) && gui_selection < stack_size(worlds) - 1)
 		gui_selection++;
+
+
 
 	if(scroll_offset + (int)gui_selection * entry_height < 4)
 		scroll_offset = side_padding - (int)gui_selection * entry_height;

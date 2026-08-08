@@ -21,12 +21,18 @@
 #define INPUT_H
 
 #include <stdbool.h>
+#include "../ini/ini.h"
+#include "../map/map.h"
 
 enum input_button {
 	IB_FORWARD,
 	IB_BACKWARD,
 	IB_LEFT,
 	IB_RIGHT,
+	IB_JS_FORWARD,
+	IB_JS_BACKWARD,
+	IB_JS_LEFT,
+	IB_JS_RIGHT,
 	IB_ACTION1,
 	IB_ACTION2,
 	IB_JUMP,
@@ -39,6 +45,10 @@ enum input_button {
 	IB_GUI_DOWN,
 	IB_GUI_LEFT,
 	IB_GUI_RIGHT,
+	IB_JS_GUI_UP,
+	IB_JS_GUI_DOWN,
+	IB_JS_GUI_LEFT,
+	IB_JS_GUI_RIGHT,
 	IB_GUI_CLICK,
 	IB_GUI_CLICK_ALT,
 	IB_SCREENSHOT,
@@ -48,11 +58,13 @@ enum input_category {
 	INPUT_CAT_WIIMOTE,
 	INPUT_CAT_NUNCHUK,
 	INPUT_CAT_CLASSIC_CONTROLLER,
+	INPUT_CAT_GC,
 	INPUT_CAT_NONE,
 };
 
 void input_init(void);
 void input_poll(void);
+
 
 bool input_symbol(enum input_button b, int* symbol, int* symbol_help,
 				  enum input_category* category);
@@ -62,5 +74,8 @@ bool input_held(enum input_button b);
 bool input_joystick(float dt, float* x, float* y);
 void input_pointer_enable(bool enable);
 bool input_pointer(float* x, float* y, float* angle);
+
+
+
 
 #endif

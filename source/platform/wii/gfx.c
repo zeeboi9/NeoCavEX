@@ -98,9 +98,10 @@ void gfx_setup() {
 	frameBuffer[0] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(screenMode));
 	frameBuffer[1] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(screenMode));
 	frameBuffer[2] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(screenMode));
+	frameBuffer[3] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(screenMode));
 
-	MQ_Init(&frame_draw, 3);
-	MQ_Init(&frame_empty, 3);
+	MQ_Init(&frame_draw, 4);
+	MQ_Init(&frame_empty, 4);
 
 	MQ_Send(frame_empty, frameBuffer[0], MQ_MSG_BLOCK);
 	MQ_Send(frame_empty, frameBuffer[1], MQ_MSG_BLOCK);

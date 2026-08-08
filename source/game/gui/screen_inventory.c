@@ -184,22 +184,22 @@ static void screen_inventory_update(struct screen* s, float dt) {
 		selected_slot = pointer_slot;
 		pointer_has_item = true;
 	} else {
-		if(input_pressed(IB_GUI_LEFT)) {
+		if(input_pressed(IB_GUI_LEFT || input_pressed(IB_JS_GUI_LEFT))) {
 			selected_slot = slot_nearest[0];
 			pointer_has_item = false;
 		}
 
-		if(input_pressed(IB_GUI_RIGHT)) {
+		if(input_pressed(IB_GUI_RIGHT) || input_pressed(IB_JS_GUI_RIGHT)) {
 			selected_slot = slot_nearest[1];
 			pointer_has_item = false;
 		}
 
-		if(input_pressed(IB_GUI_UP)) {
+		if(input_pressed(IB_GUI_UP) || input_pressed(IB_JS_GUI_UP)) {
 			selected_slot = slot_nearest[2];
 			pointer_has_item = false;
 		}
 
-		if(input_pressed(IB_GUI_DOWN)) {
+		if(input_pressed(IB_GUI_DOWN) || input_pressed(IB_JS_GUI_DOWN)) {
 			selected_slot = slot_nearest[3];
 			pointer_has_item = false;
 		}
