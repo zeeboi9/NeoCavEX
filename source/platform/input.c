@@ -155,7 +155,7 @@ static bool js_emulated_btns_held[5][4];
 extern ini_t *configfile;
 
 int i;
-int activePad = 0;
+int activePad = -1;
 u16 keysHeld[4] = {0, 0, 0, 0};
 
 
@@ -186,14 +186,16 @@ void input_poll() {
 	}
 
 
-        for (int i = 0; i < 4; i++) {
-            PAD_ControlMotor(i, 0);
-            keysHeld[i] = PAD_ButtonsHeld(i);
-			if (keysHeld[i] != 0) {
+    for (int i = 0; i < 4; i++) {
+        PAD_ControlMotor(i, 0);
+        keysHeld[i] = PAD_ButtonsHeld(i);
+        if (keysHeld[i] != 0) {
+            if (activePad >= 0 && activePad < 4) {
                 PAD_ControlMotor(activePad, PAD_MOTOR_STOP);
-                activePad = i;
             }
+            activePad = i;
         }
+    }
 
 
 	expansion_t e;
@@ -222,7 +224,7 @@ void input_poll() {
 		joystick_input[1].available = joystick_input[2].available = false;
 	}
 
-	if(activePad != 0) {
+	if(activePad >= 0) {
 		float angle = atan2(PAD_StickY(activePad), PAD_StickX(activePad));
 		float anglesub = atan2(PAD_SubStickY(activePad), PAD_SubStickX(activePad));
 		joystick_input[3].dx = sin(angle);
@@ -333,7 +335,31 @@ uint32_t input_wpad_translate(enum input_button key) {
 	WPAD_Expansion(WPAD_CHAN_0, &e);
 
 
-	if(e.type == WPAD_EXP_NUNCHUK) {
+
+	if (activePad >= 0)  {
+		switch(key) {
+			case IB_ACTION1: return input_converter("gamecube", "action1-gc");
+			case IB_ACTION2: return input_converter("gamecube", "action2-gc");
+			case IB_FORWARD: return input_converter("gamecube", "forward-gc");
+			case IB_BACKWARD: return input_converter("gamecube", "backward-gc");
+			case IB_LEFT: return input_converter("gamecube", "left-gc");
+			case IB_RIGHT: return input_converter("gamecube", "right-gc");
+			case IB_JUMP: return input_converter("gamecube", "jump-gc");
+			case IB_SNEAK: return input_converter("gamecube", "sneak-gc");
+			case IB_INVENTORY: return input_converter("gamecube", "inventory-gc");
+			case IB_HOME: return input_converter("gamecube", "home-gc");
+			case IB_SCROLL_LEFT: return input_converter("gamecube", "scroll-left-gc");
+			case IB_SCROLL_RIGHT: return input_converter("gamecube", "scroll-right-gc");
+			case IB_GUI_UP: return input_converter("gamecube", "gui-up-gc");
+			case IB_GUI_DOWN: return input_converter("gamecube", "gui-down-gc");
+			case IB_GUI_LEFT: return input_converter("gamecube", "gui-left-gc");
+			case IB_GUI_RIGHT: return input_converter("gamecube", "gui-right-gc");
+			case IB_GUI_CLICK: return input_converter("gamecube", "gui-click-gc");
+			case IB_GUI_CLICK_ALT: return input_converter("gamecube", "gui-click-alt-gc");
+			case IB_SCREENSHOT: return input_converter("gamecube", "screenshot-gc");
+			default: break;
+		}
+	} else if(e.type == WPAD_EXP_NUNCHUK) {
 		switch(key) {
 			case IB_ACTION1:      return input_converter("wiimote", "action1-wiimote");
 		    case IB_ACTION2:      return input_converter("wiimote", "action2-wiimote");
@@ -379,31 +405,6 @@ uint32_t input_wpad_translate(enum input_button key) {
 		    case IB_GUI_CLICK_ALT: return input_converter("classic", "gui-click-alt-classic");
 		    case IB_SCREENSHOT: return input_converter("classic", "screenshot-classic");
             default: break;
-		}
-	}
-
-	if (activePad != 0)  {
-		switch(key) {
-			case IB_ACTION1: return input_converter("gamecube", "action1-gc");
-			case IB_ACTION2: return input_converter("gamecube", "action2-gc");
-			case IB_FORWARD: return input_converter("gamecube", "forward-gc");
-			case IB_BACKWARD: return input_converter("gamecube", "backward-gc");
-			case IB_LEFT: return input_converter("gamecube", "left-gc");
-			case IB_RIGHT: return input_converter("gamecube", "right-gc");
-			case IB_JUMP: return input_converter("gamecube", "jump-gc");
-			case IB_SNEAK: return input_converter("gamecube", "sneak-gc");
-			case IB_INVENTORY: return input_converter("gamecube", "inventory-gc");
-			case IB_HOME: return input_converter("gamecube", "home-gc");
-			case IB_SCROLL_LEFT: return input_converter("gamecube", "scroll-left-gc");
-			case IB_SCROLL_RIGHT: return input_converter("gamecube", "scroll-right-gc");
-			case IB_GUI_UP: return input_converter("gamecube", "gui-up-gc");
-			case IB_GUI_DOWN: return input_converter("gamecube", "gui-down-gc");
-			case IB_GUI_LEFT: return input_converter("gamecube", "gui-left-gc");
-			case IB_GUI_RIGHT: return input_converter("gamecube", "gui-right-gc");
-			case IB_GUI_CLICK: return input_converter("gamecube", "gui-click-gc");
-			case IB_GUI_CLICK_ALT: return input_converter("gamecube", "gui-click-alt-gc");
-			case IB_SCREENSHOT: return input_converter("gamecube", "screenshot-gc");
-			default: break;
 		}
 	}
 	return -1;
