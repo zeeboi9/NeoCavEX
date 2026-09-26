@@ -155,7 +155,7 @@ static bool js_emulated_btns_held[5][4];
 extern ini_t *configfile;
 
 int i;
-int activePad = -1;
+int activePad;
 u16 keysHeld[4] = {0, 0, 0, 0};
 
 
@@ -185,15 +185,14 @@ void input_poll() {
 		gstate.quit = true;
 	}
 
+	activePad = -1;
 
     for (int i = 0; i < 4; i++) {
         PAD_ControlMotor(i, 0);
-        keysHeld[i] = PAD_ButtonsHeld(i);
+        keysHeld[i] = PAD_ButtonsDown(i);
         if (keysHeld[i] != 0) {
-            if (activePad >= 0 && activePad < 4) {
-                PAD_ControlMotor(activePad, PAD_MOTOR_STOP);
-            }
             activePad = i;
+            break;
         }
     }
 
@@ -225,20 +224,30 @@ void input_poll() {
 	}
 
 	if(activePad >= 0) {
-		float angle = atan2(PAD_StickY(activePad), PAD_StickX(activePad));
-		float anglesub = atan2(PAD_SubStickY(activePad), PAD_SubStickX(activePad));
+  		float main_x = (float)PAD_StickX(activePad) / 80.0f;
+		float main_y = (float)PAD_StickY(activePad) / 80.0f;
+
+		float sub_x  = (float)PAD_SubStickX(activePad) / 80.0f;
+		float sub_y  = (float)PAD_SubStickY(activePad) / 80.0f;
+
+		float angle = atan2(main_y, main_x);
 		joystick_input[3].dx = sin(angle);
 		joystick_input[3].dy = cos(angle);
-		joystick_input[3].magnitude = hypotf(PAD_StickX(activePad), PAD_StickY(activePad));
+		joystick_input[3].magnitude = hypotf(main_x, main_y);
 		joystick_input[3].available = true;
 
+
+		float anglesub = atan2(sub_y, sub_x);
 		joystick_input[4].dx = sin(anglesub);
 		joystick_input[4].dy = cos(anglesub);
-		joystick_input[4].magnitude = hypotf(PAD_SubStickX(activePad), PAD_SubStickY(activePad));
+		joystick_input[4].magnitude = hypotf(sub_x, sub_y);
 		joystick_input[4].available = true;
 	} else {
 		joystick_input[3].available = joystick_input[4].available = false;
 	}
+
+
+
 
 	for(int j = 0; j < 5; j++) {
 		for(int k = 0; k < 4; k++) {
@@ -316,8 +325,7 @@ uint32_t input_converter(char *type, char *button){
 		case 208: return PAD_BUTTON_B;
 		case 209: return PAD_BUTTON_X;
 		case 210: return PAD_BUTTON_Y;
-		case 211: return PAD_BUTTON_MENU;
-		case 212: return PAD_BUTTON_START;
+		case 211: return PAD_BUTTON_START;
 		default: break;
 
 	}
@@ -441,7 +449,7 @@ int input_JS_translate(enum input_button key) {
 			case IB_JS_GUI_RIGHT: return 923;
             default: break;
 		}
-	} else if(activePad != 0){
+	} else if(activePad >= 0){
 		switch(key) {
 			case IB_JS_FORWARD: return 930;
 			case IB_JS_BACKWARD: return 931;
@@ -483,13 +491,11 @@ void input_native_key_status(enum input_button b, bool* pressed, bool* released,
 	if(e.type == WPAD_EXP_CLASSIC || e.type == WPAD_EXP_NUNCHUK){
 		*pressed = WPAD_ButtonsDown(WPAD_CHAN_0) & input_wpad_translate(b);
 		*released = WPAD_ButtonsUp(WPAD_CHAN_0) & input_wpad_translate(b);
-		*held = !(*pressed) && !(*released)
-			&& WPAD_ButtonsHeld(WPAD_CHAN_0) & input_wpad_translate(b);
-	}else if(keysHeld[i] != 0){
+		*held = WPAD_ButtonsHeld(WPAD_CHAN_0) & input_wpad_translate(b);
+	}else if(activePad >= 0){
 		*pressed = PAD_ButtonsDown(activePad) & input_wpad_translate(b);
 		*released = PAD_ButtonsUp(activePad) & input_wpad_translate(b);
-		*held = !(*pressed) && !(*released)
-			&& PAD_ButtonsHeld(activePad) & input_wpad_translate(b);
+		*held = PAD_ButtonsHeld(activePad) & input_wpad_translate(b);
 	}
 
 
@@ -553,7 +559,7 @@ int input_symbol_translate(enum input_button key) {
 
 		}
     }
-	else if(keysHeld[i] != 0) {
+	else if(activePad >= 0) {
 		switch(key) {
 			case IB_ACTION1: ini_sget(configfile, "gamecube", "action1-gc", "%d", &sym); break;
 			case IB_ACTION2: ini_sget(configfile, "gamecube", "action2-gc", "%d", &sym); break;
@@ -606,6 +612,21 @@ bool input_native_key_symbol(int key, int* symbol, int* symbol_help,
 		return true;
 	}
 
+	if(key >= 930 && key < 934) {
+		*symbol = *symbol_help = 20;
+		*category = INPUT_CAT_GC;
+		*priority = 1;
+		return true;
+	}
+
+	if(key >= 940 && key < 944) {
+		*symbol = *symbol_help = 21;
+		*category = INPUT_CAT_GC;
+		*priority = 1;
+		return true;
+	}
+
+
 	if(key < -1 || key > 213)
 		return false;
 
@@ -614,7 +635,9 @@ bool input_native_key_symbol(int key, int* symbol, int* symbol_help,
 		[6] = 2,	[7] = 3,	[8] = 5,	[9] = 6,	[10] = 4,	[11] = 8,
 		[12] = 9,	[100] = 25, [101] = 26, [102] = 27, [103] = 28, [104] = 10,
 		[105] = 11, [106] = 12, [107] = 13, [108] = 14, [109] = 15, [110] = 22,
-		[111] = 23, [112] = 5,	[113] = 6,	[114] = 4,
+		[111] = 23, [112] = 5,	[113] = 6,	[114] = 4,  [200] = 27, [201] = 28,
+		[202] = 26, [203] = 25, [204] = 40, [205] = 42, [206] = 41, [207] = 34,
+		[208] = 35, [209] = 36, [210] = 209, [211] = 43,
 	};
 
 	*category = INPUT_CAT_NONE;
@@ -641,8 +664,8 @@ bool input_native_key_symbol(int key, int* symbol, int* symbol_help,
 	WPAD_Expansion(WPAD_CHAN_0, &e);
 
 	if((*category == INPUT_CAT_NUNCHUK && e.type == WPAD_EXP_NUNCHUK)
-	   || (*category == INPUT_CAT_CLASSIC_CONTROLLER
-		   && e.type == WPAD_EXP_CLASSIC)) {
+	   || (*category == INPUT_CAT_CLASSIC_CONTROLLER && e.type == WPAD_EXP_CLASSIC)
+	   || (*category == INPUT_CAT_GC && activePad >= 0)) {
 		*priority = 2;
 	} else {
 		*priority = 1;

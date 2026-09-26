@@ -1,4 +1,4 @@
-# CavEX
+# NeoCavEX
 
 *Cave Explorer* is a Wii homebrew game with the goal to recreate most of the core survival aspects up until Beta 1.7.3. Any features beyond *will not* be added.
 
@@ -42,7 +42,7 @@ You need to download these libraries yourself and place their source files to th
 | [cNBT](https://github.com/chmod222/cNBT) | `buffer.c`, `buffer.h`, `list.h`, `nbt_loading.c`, `nbt_parsing.c`, `nbt_treeops.c`, `nbt_util.c` and `nbt.h` | `source/cNBT/` |
 | [parson](https://github.com/kgabis/parson) | `parson.h` and `parson.c` | `source/parson/` |
 | [M*LIB](https://github.com/P-p-H-d/mlib) | any root `*.h` | compiler include path |
-| [ini](https://github.com/rxi/ini) | 'ini.h' and 'ini.c' | source/ini | 
+| [ini](https://github.com/rxi/ini) | 'ini.h' and 'ini.c' | source/ini |
 
 ### Wii
 
