@@ -155,7 +155,7 @@ static bool js_emulated_btns_held[5][4];
 extern ini_t *configfile;
 
 int i;
-int activePad;
+s32 activePad;
 u16 keysHeld[4] = {0, 0, 0, 0};
 
 
@@ -178,23 +178,25 @@ void input_init() {
 
 void input_poll() {
 	WPAD_ScanPads();
-	PAD_ScanPads();
 
     if(configfile == NULL){
 		ini_free(configfile);
 		gstate.quit = true;
 	}
 
-	activePad = -1;
+	u32 connected = PAD_ScanPads();
+	s32 activePad = -1;
 
-    for (int i = 0; i < 4; i++) {
-        PAD_ControlMotor(i, 0);
-        keysHeld[i] = PAD_ButtonsDown(i);
-        if (keysHeld[i] != 0) {
-            activePad = i;
-            break;
-        }
-    }
+	if (connected & 0x00000001) {
+		activePad = 0;
+	} else if (connected & 0x00000002) {
+		activePad = 1;
+	} else if (connected & 0x00000004) {
+		activePad = 2;
+	} else if (connected & 0x00000008) {
+		activePad = 3;
+	}
+
 
 
 	expansion_t e;
@@ -491,11 +493,15 @@ void input_native_key_status(enum input_button b, bool* pressed, bool* released,
 	if(e.type == WPAD_EXP_CLASSIC || e.type == WPAD_EXP_NUNCHUK){
 		*pressed = WPAD_ButtonsDown(WPAD_CHAN_0) & input_wpad_translate(b);
 		*released = WPAD_ButtonsUp(WPAD_CHAN_0) & input_wpad_translate(b);
-		*held = WPAD_ButtonsHeld(WPAD_CHAN_0) & input_wpad_translate(b);
+		*held = !(*pressed) && !(*released)
+			&& WPAD_ButtonsHeld(WPAD_CHAN_0) & input_wpad_translate(b);
+
 	}else if(activePad >= 0){
 		*pressed = PAD_ButtonsDown(activePad) & input_wpad_translate(b);
 		*released = PAD_ButtonsUp(activePad) & input_wpad_translate(b);
-		*held = PAD_ButtonsHeld(activePad) & input_wpad_translate(b);
+		*held = !(*pressed) && !(*released)
+			&& PAD_ButtonsHeld(activePad) & input_wpad_translate(b);
+
 	}
 
 
