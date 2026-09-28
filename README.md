@@ -13,13 +13,13 @@
 * correct light propagation
 * ambient occlusion on blocks
 * configurable buttons
+* GameCube support
 
 ---
 
 **Planned features** *(in no particular order, not complete)*
 * main menu
 * UI for settings
-* gamecube controller support
 * sound
 * generation of new chunks
 * biome colors
