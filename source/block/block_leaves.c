@@ -31,18 +31,26 @@ static size_t getBoundingBox(struct block_info* this, bool entity,
 	return 1;
 }
 
+/*
 struct face_occlusion sides_mask = {
 	.mask = {0xAAAAAAAA, 0xAAAAAAAA, 0xAAAAAAAA, 0xAAAAAAAA, 0xAAAAAAAA,
 			 0xAAAAAAAA, 0xAAAAAAAA, 0xAAAAAAAA},
 };
+*/
 
 static struct face_occlusion*
 getSideMask(struct block_info* this, enum side side, struct block_info* it) {
-	return (it->block->type == this->block->type) ?
+/*	return (it->block->type == this->block->type) ?
 		((side == SIDE_RIGHT || side == SIDE_BACK || side == SIDE_BOTTOM) ?
 			 face_occlusion_full() :
 			 &sides_mask) :
 		&sides_mask;
+*/
+//optimized fancy leaves:
+	return (it->block->type == this->block->type) ? face_occlusion_full() :
+													face_occlusion_empty();
+//fast leaves:
+//	return face_occlusion_full();
 }
 
 static uint8_t getTextureIndex(struct block_info* this, enum side side) {
@@ -55,7 +63,7 @@ static uint8_t getTextureIndex(struct block_info* this, enum side side) {
 }
 
 static size_t getDroppedItem(struct block_info* this, struct item_data* it,
-							 struct random_gen* g) {
+							 struct random_gen* g, struct server_local* s) {
 	bool drop_sapling = (rand_gen(g) % 16) == 0;
 
 	if(it && drop_sapling) {
@@ -81,7 +89,7 @@ static void onRandomTick(struct server_local* s, struct block_info* this) {
 		}
 	}
 
-	server_world_set_block(&s->world, this->x, this->y, this->z,
+	server_world_set_block(s, this->x, this->y, this->z,
 						   (struct block_data) {
 							   .type = BLOCK_AIR,
 							   .metadata = 0,
@@ -102,7 +110,7 @@ struct block block_leaves = {
 	.renderBlock = render_block_full,
 	.renderBlockAlways = NULL,
 	.luminance = 0,
-	.double_sided = true,
+	.double_sided = false,
 	.can_see_through = true,
 	.opacity = 1,
 	.ignore_lighting = false,
@@ -117,6 +125,7 @@ struct block block_leaves = {
 		.max_stack = 64,
 		.renderItem = render_item_block,
 		.onItemPlace = block_place_default,
+		.fuel = 0,
 		.render_data.block.has_default = false,
 		.armor.is_armor = false,
 		.tool.type = TOOL_TYPE_ANY,

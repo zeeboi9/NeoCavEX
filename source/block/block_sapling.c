@@ -60,7 +60,7 @@ static bool onItemPlace(struct server_local* s, struct item_data* it,
 }
 
 static size_t getDroppedItem(struct block_info* this, struct item_data* it,
-							 struct random_gen* g) {
+							 struct random_gen* g, struct server_local* s) {
 	if(it) {
 		it->id = this->block->type;
 		it->durability = this->block->metadata & 3;
@@ -79,7 +79,7 @@ static void onRandomTick(struct server_local* s, struct block_info* this) {
 
 	if(age < 3) {
 		this->block->metadata = ((age + 1) << 2) | tree_type;
-		server_world_set_block(&s->world, this->x, this->y, this->z,
+		server_world_set_block(s, this->x, this->y, this->z,
 							   *this->block);
 		return;
 	}
@@ -96,7 +96,7 @@ static void onRandomTick(struct server_local* s, struct block_info* this) {
 	}
 
 	for(int k = 0; k < height; k++)
-		server_world_set_block(&s->world, this->x, this->y + k, this->z,
+		server_world_set_block(s, this->x, this->y + k, this->z,
 							   (struct block_data) {
 								   .type = BLOCK_LOG,
 								   .metadata = this->block->metadata & 0x3,
@@ -115,9 +115,7 @@ static void onRandomTick(struct server_local* s, struct block_info* this) {
 											 this->y + height + y, this->z + z,
 											 &blk)
 				   && blk.type == BLOCK_AIR) {
-					server_world_set_block(
-						&s->world, this->x + x, this->y + height + y,
-						this->z + z,
+					server_world_set_block(s, this->x + x, this->y + height + y,this->z + z,
 						(struct block_data) {
 							.type = BLOCK_LEAVES,
 							.metadata = this->block->metadata & 0x3,
@@ -155,6 +153,7 @@ struct block block_sapling = {
 	.block_item = {
 		.has_damage = false,
 		.max_stack = 64,
+		.fuel = 1,
 		.renderItem = render_item_flat,
 		.onItemPlace = onItemPlace,
 		.armor.is_armor = false,

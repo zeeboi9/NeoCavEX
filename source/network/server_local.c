@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "../cglm/cglm.h"
 
@@ -29,14 +30,55 @@
 #include "inventory_logic.h"
 #include "server_interface.h"
 #include "server_local.h"
+#include "server_world.h"
+#include "complex_block_archive.h"
 
 #define CHUNK_DIST2(x1, x2, z1, z2)                                            \
 	(((x1) - (x2)) * ((x1) - (x2)) + ((z1) - (z2)) * ((z1) - (z2)))
 
+
+struct entity* server_local_spawn_minecart(vec3 pos, struct server_local* s) {
+    uint32_t entity_id = entity_gen_id(s->entities);
+    struct entity** e_ptr = dict_entity_safe_get(s->entities, entity_id);
+    *e_ptr = malloc(sizeof(struct entity));
+    struct entity* e = *e_ptr;
+    assert(e);
+
+    entity_minecart(entity_id, e, true, &s->world);
+    e->teleport(e, pos);
+
+    glm_vec3_copy(
+        (vec3){ rand_gen_flt(&s->rand_src) - 0.5f,
+               rand_gen_flt(&s->rand_src) - 0.5f,
+               rand_gen_flt(&s->rand_src) - 0.5f },
+        e->vel
+    );
+    glm_vec3_normalize(e->vel);
+    glm_vec3_scale(
+        e->vel,
+        (2.0f * rand_gen_flt(&s->rand_src) + 0.5f) * 0.1f,
+        e->vel
+    );
+
+    clin_rpc_send(&(struct client_rpc) {
+        .type = CRPC_SPAWN_MINECART,
+        .payload.spawn_minecart.entity_id = e->id,
+        .payload.spawn_minecart.pos       = { pos[0], pos[1], pos[2] },
+    });
+
+    return e;
+}
+
+
+
 struct entity* server_local_spawn_item(vec3 pos, struct item_data* it,
 									   bool throw, struct server_local* s) {
 	uint32_t entity_id = entity_gen_id(s->entities);
-	struct entity* e = dict_entity_safe_get(s->entities, entity_id);
+	struct entity** e_ptr = dict_entity_safe_get(s->entities, entity_id);
+	*e_ptr = malloc(sizeof(struct entity));
+	struct entity* e = *e_ptr;
+	assert(e);
+
 	entity_item(entity_id, e, true, &s->world, *it);
 	e->teleport(e, pos);
 
@@ -63,6 +105,42 @@ struct entity* server_local_spawn_item(vec3 pos, struct item_data* it,
 		.payload.spawn_item.entity_id = e->id,
 		.payload.spawn_item.item = e->data.item.item,
 		.payload.spawn_item.pos = {e->pos[0], e->pos[1], e->pos[2]},
+		.payload.spawn_item.vel = {e->vel[0], e->vel[1], e->vel[2]},
+	});
+
+	return e;
+}
+
+struct entity* server_local_spawn_monster(vec3 pos, int monster_id,
+									   struct server_local* s) {
+	uint32_t entity_id = entity_gen_id(s->entities);
+
+	struct entity** e_ptr = dict_entity_safe_get(s->entities, entity_id);
+	*e_ptr = malloc(sizeof(struct entity));
+	struct entity* e = *e_ptr;
+	assert(e);
+
+
+	entity_monster(entity_id, e, true, &s->world, monster_id);
+
+	pos[0] = floorf(pos[0]) + 0.5f;
+	pos[2] = floorf(pos[2]) + 0.5f;
+	//pos[1] = pos[1] + 1.0f;
+	e->teleport(e, pos);
+
+	glm_vec3_copy((vec3) {rand_gen_flt(&s->rand_src) - 0.5F,
+							rand_gen_flt(&s->rand_src) - 0.5F,
+							rand_gen_flt(&s->rand_src) - 0.5F},
+					e->vel);
+	glm_vec3_normalize(e->vel);
+	glm_vec3_scale(
+		e->vel, (2.0F * rand_gen_flt(&s->rand_src) + 0.5F) * 0.1F, e->vel);
+
+	clin_rpc_send(&(struct client_rpc) {
+		.type = CRPC_SPAWN_MONSTER,
+		.payload.spawn_monster.entity_id = e->id,
+		.payload.spawn_monster.monster_id = monster_id,
+		.payload.spawn_monster.pos = {e->pos[0], e->pos[1], e->pos[2]},
 	});
 
 	return e;
@@ -77,12 +155,12 @@ void server_local_spawn_block_drops(struct server_local* s,
 
 	struct random_gen tmp = s->rand_src;
 	size_t count
-		= blocks[blk_info->block->type]->getDroppedItem(blk_info, NULL, &tmp);
+		= blocks[blk_info->block->type]->getDroppedItem(blk_info, NULL, &tmp, s);
 
 	if(count > 0) {
 		struct item_data items[count];
 		blocks[blk_info->block->type]->getDroppedItem(blk_info, items,
-													  &s->rand_src);
+													  &s->rand_src, s);
 
 		for(size_t k = 0; k < count; k++)
 			server_local_spawn_item((vec3) {blk_info->x + 0.5F,
@@ -115,12 +193,61 @@ void server_local_send_inv_changes(set_inv_slot_t changes,
 	}
 }
 
+void server_local_set_player_health(struct server_local* s, short new_health) {
+	s->player.health = new_health;
+	if (s->player.health > MAX_PLAYER_HEALTH) s->player.health = MAX_PLAYER_HEALTH;
+	if (s->player.health <= 0) {
+		//player dead, drop all items and move to spawn position
+		for (int i = 0; i < INVENTORY_SIZE; i++) {
+			struct item_data item;
+			inventory_get_slot(&s->player.inventory, i, &item);
+
+			if (item.id != 0) {
+				inventory_clear_slot(&s->player.inventory, i);
+				clin_rpc_send(&(struct client_rpc) {
+					.type = CRPC_INVENTORY_SLOT,
+					.payload.inventory_slot.window = WINDOWC_INVENTORY,
+					.payload.inventory_slot.slot = i,
+					.payload.inventory_slot.item = s->player.inventory.items[i]
+				});
+
+				server_local_spawn_item(
+					(vec3) {s->player.x, s->player.y, s->player.z}, &item, false, s);
+			}
+		}
+
+		//respawn with half health
+		s->player.health = MAX_PLAYER_HEALTH/2;
+		s->player.x = s->player.spawn_x;
+		s->player.y = s->player.spawn_y;
+		s->player.z = s->player.spawn_z;
+		clin_rpc_send(&(struct client_rpc) {
+			.type = CRPC_PLAYER_POS,
+			.payload.player_pos.position = {s->player.x, s->player.y, s->player.z},
+			.payload.player_pos.rotation = {0, 0}
+		});
+	}
+
+	//send updated health to client
+	clin_rpc_send(&(struct client_rpc) {
+		.type = CRPC_PLAYER_SET_HEALTH,
+		.payload.player_set_health.health = s->player.health
+	});
+}
+
 static void server_local_process(struct server_rpc* call, void* user) {
 	assert(call && user);
 
 	struct server_local* s = user;
 
 	switch(call->type) {
+		case SRPC_TOGGLE_PAUSE:
+			s->paused = !s->paused;
+			clin_rpc_send(&(struct client_rpc) {
+				.type = CRPC_TIME_SET,
+				.payload.time_set = s->world_time,
+			});
+			break;
 		case SRPC_PLAYER_POS:
 			if(s->player.finished_loading) {
 				s->player.x = call->payload.player_pos.x;
@@ -128,6 +255,8 @@ static void server_local_process(struct server_rpc* call, void* user) {
 				s->player.z = call->payload.player_pos.z;
 				s->player.rx = call->payload.player_pos.rx;
 				s->player.ry = call->payload.player_pos.ry;
+				s->player.old_vel_y = s->player.vel_y;
+				s->player.vel_y = call->payload.player_pos.vel_y;
 				s->player.has_pos = true;
 			}
 			break;
@@ -176,7 +305,7 @@ static void server_local_process(struct server_rpc* call, void* user) {
 				if(server_world_get_block(&s->world, call->payload.block_dig.x,
 										  call->payload.block_dig.y,
 										  call->payload.block_dig.z, &blk)) {
-					server_world_set_block(&s->world, call->payload.block_dig.x,
+					server_world_set_block(s, call->payload.block_dig.x,
 										   call->payload.block_dig.y,
 										   call->payload.block_dig.z,
 										   (struct block_data) {
@@ -286,6 +415,18 @@ static void server_local_process(struct server_rpc* call, void* user) {
 			level_archive_write_inventory(&s->level, &s->player.inventory);
 			level_archive_write(&s->level, LEVEL_TIME, &s->world_time);
 
+			level_archive_write(&s->level, LEVEL_PLAYER_HEALTH, &s->player.health);
+
+			chest_archive_write(s->chest_pos, s->chest_items[0], s->level_name);
+			sign_archive_write(s->sign_pos, s->sign_texts[0], s->level_name);
+
+			dict_entity_it_t it;
+			dict_entity_it(it, s->entities);
+
+			while(!dict_entity_end_p(it)) {
+				free(dict_entity_ref(it)->value);
+				dict_entity_next(it);
+			}
 			dict_entity_reset(s->entities);
 			server_world_destroy(&s->world);
 			level_archive_destroy(&s->level);
@@ -294,6 +435,18 @@ static void server_local_process(struct server_rpc* call, void* user) {
 			s->player.finished_loading = false;
 			string_reset(s->level_name);
 			break;
+
+		case SRPC_ENTITY_ATTACK:
+		  uint32_t id = call->payload.entity_attack.entity_id;
+		  struct entity **ptr = dict_entity_get(s->entities, id);
+		  if (ptr && *ptr) {
+		    (*ptr)->health -= 5;    // of welk DAMAGE‐getal je wilt
+		    if ((*ptr)->health <= 0) {
+		      (*ptr)->data.monster.fuse = 30;
+		      (*ptr)->ai_state = AI_FUSE;
+		    }
+		  }
+		  break;
 		case SRPC_LOAD_WORLD:
 			assert(!s->player.has_pos);
 
@@ -312,10 +465,25 @@ static void server_local_process(struct server_rpc* call, void* user) {
 					s->player.rx = rot[0];
 					s->player.ry = rot[1];
 					s->player.dimension = dim;
+					s->player.fall_y = s->player.y;
+					s->player.old_vel_y = 0;
+					s->player.vel_y = 0;
 					s->player.has_pos = true;
 				}
 
 				level_archive_read(&s->level, LEVEL_TIME, &s->world_time, 0);
+
+				level_archive_read(&s->level, LEVEL_PLAYER_HEALTH, &s->player.health, 0);
+				if (s->player.health > MAX_PLAYER_HEALTH) s->player.health = MAX_PLAYER_HEALTH;
+				level_archive_read(&s->level, LEVEL_PLAYER_SPAWNX, &s->player.spawn_x, 0);
+				level_archive_read(&s->level, LEVEL_PLAYER_SPAWNY, &s->player.spawn_y, 0);
+				level_archive_read(&s->level, LEVEL_PLAYER_SPAWNZ, &s->player.spawn_z, 0);
+
+				chest_archive_read(s->chest_pos, s->chest_items[0], s->level_name);
+				sign_archive_read(s->sign_pos, s->sign_texts[0], s->level_name);
+
+				s->player.oxygen = MAX_OXYGEN;
+
 				dict_entity_reset(s->entities);
 				s->player.active_inventory = &s->player.inventory;
 
@@ -323,6 +491,11 @@ static void server_local_process(struct server_rpc* call, void* user) {
 					.type = CRPC_WORLD_RESET,
 					.payload.world_reset.dimension = dim,
 					.payload.world_reset.local_entity = 0,
+				});
+
+				clin_rpc_send(&(struct client_rpc) {
+					.type = CRPC_PLAYER_SET_HEALTH,
+					.payload.player_set_health.health = s->player.health
 				});
 			}
 			break;
@@ -332,9 +505,18 @@ static void server_local_process(struct server_rpc* call, void* user) {
 static void server_local_update(struct server_local* s) {
 	assert(s);
 
+	// print TPS
+	#ifndef NDEBUG
+	ptime_t this_tick = time_get();
+	float dt = time_diff_s(s->last_tick, this_tick);
+	float tps = 1.0F / dt;
+	s->last_tick = this_tick;
+	printf("%f\n", tps);
+	#endif
+
 	svin_process_messages(server_local_process, s, false);
 
-	if(!s->player.has_pos)
+	if(!s->player.has_pos || s->paused)
 		return;
 
 	s->world_time++;
@@ -344,7 +526,7 @@ static void server_local_update(struct server_local* s) {
 
 	while(!dict_entity_end_p(it)) {
 		uint32_t key = dict_entity_ref(it)->key;
-		struct entity* e = &dict_entity_ref(it)->value;
+		struct entity* e = dict_entity_ref(it)->value;
 
 		if(e->tick_server) {
 			bool remove = (e->delay_destroy == 0) || e->tick_server(e, s);
@@ -356,14 +538,18 @@ static void server_local_update(struct server_local* s) {
 					.payload.entity_destroy.entity_id = key,
 				});
 
+				free(e);
 				dict_entity_erase(s->entities, key);
 			} else if(e->delay_destroy < 0) {
+				// TODO: find a more optimized way of moving entities on both client and server
+				/*
 				clin_rpc_send(&(struct client_rpc) {
 					.type = CRPC_ENTITY_MOVE,
 					.payload.entity_move.entity_id = key,
 					.payload.entity_move.pos
 					= {e->pos[0], e->pos[1], e->pos[2]},
 				});
+				*/
 			}
 		} else {
 			dict_entity_next(it);
@@ -375,6 +561,7 @@ static void server_local_update(struct server_local* s) {
 
 	server_world_random_tick(&s->world, &s->rand_src, s, px, pz,
 							 MAX_VIEW_DISTANCE - 2);
+	server_world_tick(&s->world, s);
 
 	w_coord_t cx, cz;
 	if(server_world_furthest_chunk(&s->world, MAX_VIEW_DISTANCE, px, pz, &cx,
@@ -465,6 +652,44 @@ static void server_local_update(struct server_local* s) {
 
 		s->player.finished_loading = true;
 	}
+
+	// check if player is underwater
+	// server side X off by one?
+	struct block_data blk;
+	server_world_get_block(&s->world, s->player.x-1, s->player.y, s->player.z, &blk);
+	bool in_water = (blk.type == BLOCK_WATER_STILL || blk.type == BLOCK_WATER_FLOW);
+	bool in_lava = (blk.type == BLOCK_LAVA_STILL || blk.type == BLOCK_LAVA_FLOW);
+	if(s->player.y != 0) {
+		server_world_get_block(&s->world, s->player.x-1, s->player.y-1, s->player.z, &blk);
+		if(blk.type == BLOCK_LAVA_STILL || blk.type == BLOCK_LAVA_FLOW) in_lava = true;
+	}
+
+	// check if player is falling
+	// reset falling height if player is underwater
+	if((s->player.old_vel_y >= -0.079f && s->player.vel_y < -0.079f) || in_water) {
+		s->player.fall_y = s->player.y;
+	}
+	if(s->player.old_vel_y < -0.079f && s->player.vel_y >= -0.079f) {
+		int fall_distance = s->player.fall_y - s->player.y;
+		if(fall_distance >= 4) {
+			server_local_set_player_health(s, s->player.health-HEALTH_PER_HEART*(fall_distance-3));
+		}
+		s->player.fall_y = s->player.y;
+	}
+
+	if(in_lava) {
+		// damage player in lava every 8 ticks
+		if((s->player.oxygen & 7) == 0) {
+			server_local_set_player_health(s, s->player.health-HEALTH_PER_HEART*2);
+		}
+		s->player.oxygen--;
+	} else if(in_water) {
+		// damage drowning player every 32 ticks
+		if(s->player.oxygen <= OXYGEN_THRESHOLD && (s->player.oxygen&31) == 0) {
+			server_local_set_player_health(s, s->player.health-HEALTH_PER_HEART);
+		}
+		s->player.oxygen--;
+	} else s->player.oxygen = MAX_OXYGEN;
 }
 
 static void* server_local_thread(void* user) {
@@ -479,15 +704,19 @@ static void* server_local_thread(void* user) {
 void server_local_create(struct server_local* s) {
 	assert(s);
 	rand_gen_seed(&s->rand_src);
+	s->paused = false;
 	s->world_time = 0;
 	s->player.has_pos = false;
 	s->player.finished_loading = false;
+	s->last_tick = time_get();
 	string_init(s->level_name);
 
 	inventory_create(&s->player.inventory, &inventory_logic_player, s,
-					 INVENTORY_SIZE);
+					 INVENTORY_SIZE, 0, 0, 0);
 	s->player.active_inventory = &s->player.inventory;
 	dict_entity_init(s->entities);
+	memset(s->chest_pos, -1, MAX_CHESTS*3*sizeof(int));
+	memset(s->sign_pos, -1, MAX_SIGNS*3*sizeof(int));
 
 	struct thread t;
 	thread_create(&t, server_local_thread, s, 8);

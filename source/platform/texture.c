@@ -29,13 +29,23 @@
 
 struct tex_gfx texture_fog;
 struct tex_gfx texture_terrain;
+struct tex_gfx texture_particles;
 struct tex_gfx texture_items;
+struct tex_gfx texture_mobs;
+struct tex_gfx texture_minecart;
+struct tex_gfx texture_creeper;
+struct tex_gfx texture_pig;
 struct tex_gfx texture_font;
 struct tex_gfx texture_anim;
 struct tex_gfx texture_gui_inventory;
 struct tex_gfx texture_gui_crafting;
 struct tex_gfx texture_gui_furnace;
+<<<<<<< HEAD
 struct tex_gfx texture_gui_buttons;
+=======
+struct tex_gfx texture_gui_chest;
+struct tex_gfx texture_gui_iron_chest;
+>>>>>>> other-fork/master
 struct tex_gfx texture_gui2;
 struct tex_gfx texture_controls;
 struct tex_gfx texture_pointer;
@@ -82,13 +92,23 @@ void tex_init() {
 
 	size_t w, h;
 	void* output = tex_atlas_block("terrain.png", &w, &h);
-	if(output)
+	if(output){
 		tex_gfx_load(&texture_terrain, output, w, h, TEX_FMT_RGBA16, false);
+	}
+
 
 	tex_gfx_load_file(&texture_font, "default.png", TEX_FMT_I8, false);
 	gutil_reset_font(&texture_font);
 
 	tex_gfx_load_file(&texture_anim, "anim.png", TEX_FMT_RGBA32, false);
+
+    size_t pw, ph;
+    void* pout = tex_atlas_particles("particles.png", &pw, &ph);
+    if(pout) {
+        tex_gfx_load(&texture_particles, pout, pw, ph, TEX_FMT_RGBA16, false);
+    }
+
+
 	tex_gfx_load_file(&texture_gui_inventory, "gui/inventory.png",
 					  TEX_FMT_RGBA16, false);
 	tex_gfx_load_file(&texture_gui_crafting, "gui/crafting.png", TEX_FMT_RGBA16,
@@ -96,9 +116,19 @@ void tex_init() {
 	tex_gfx_load_file(&texture_gui_furnace, "gui/furnace.png", TEX_FMT_RGBA16,
 					  false);
 	tex_gfx_load_file(&texture_gui_buttons, "gui/buttons.png", TEX_FMT_RGBA16,
+
+	tex_gfx_load_file(&texture_gui_chest, "gui/chest.png", TEX_FMT_RGBA16,
+					  false);
+	tex_gfx_load_file(&texture_gui_iron_chest, "gui/iron_chest.png", TEX_FMT_RGBA16,
 					  false);
 	tex_gfx_load_file(&texture_gui2, "gui_2.png", TEX_FMT_RGBA16, false);
 	tex_gfx_load_file(&texture_items, "items.png", TEX_FMT_RGBA16, false);
+	tex_gfx_load_file(&texture_mobs, "mobs.png", TEX_FMT_RGBA16, false);
+	tex_gfx_load_file(&texture_minecart, "entity/minecart.png", TEX_FMT_RGBA16, false);
+	tex_gfx_load_file(&texture_creeper, "entity/creeper.png", TEX_FMT_RGBA16, false);
+	tex_gfx_load_file(&texture_pig, "entity/pig.png", TEX_FMT_RGBA16, false);
+
+
 	tex_gfx_load_file(&texture_controls, "controls.png", TEX_FMT_RGBA16, false);
 	tex_gfx_load_file(&texture_pointer, "pointer.png", TEX_FMT_RGBA16, false);
 	tex_gfx_load_file(&texture_clouds, "environment/clouds.png", TEX_FMT_IA4,

@@ -17,6 +17,9 @@
 	along with CavEX.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "../network/client_interface.h"
+#include "../network/inventory_logic.h"
+#include "../network/server_local.h"
 #include "blocks.h"
 
 static enum block_material getMaterial(struct block_info* this) {
@@ -36,53 +39,6 @@ getSideMask(struct block_info* this, enum side side, struct block_info* it) {
 }
 
 static uint8_t getTextureIndex(struct block_info* this, enum side side) {
-	struct block_data* right = this->neighbours + SIDE_RIGHT;
-	struct block_data* left = this->neighbours + SIDE_LEFT;
-	struct block_data* back = this->neighbours + SIDE_BACK;
-	struct block_data* front = this->neighbours + SIDE_FRONT;
-
-	// TODO: double chest wrong orientation
-
-	if(right->type == this->block->type) {
-		switch(side) {
-			case SIDE_TOP:
-			case SIDE_BOTTOM: return tex_atlas_lookup(TEXAT_CHEST_TOP);
-			case SIDE_BACK: return tex_atlas_lookup(TEXAT_CHEST_FRONT_1);
-			case SIDE_FRONT: return tex_atlas_lookup(TEXAT_CHEST_BACK_2);
-			default: return tex_atlas_lookup(TEXAT_CHEST_SIDE);
-		}
-	}
-
-	if(left->type == this->block->type) {
-		switch(side) {
-			case SIDE_TOP:
-			case SIDE_BOTTOM: return tex_atlas_lookup(TEXAT_CHEST_TOP);
-			case SIDE_BACK: return tex_atlas_lookup(TEXAT_CHEST_FRONT_2);
-			case SIDE_FRONT: return tex_atlas_lookup(TEXAT_CHEST_BACK_1);
-			default: return tex_atlas_lookup(TEXAT_CHEST_SIDE);
-		}
-	}
-
-	if(back->type == this->block->type) {
-		switch(side) {
-			case SIDE_TOP:
-			case SIDE_BOTTOM: return tex_atlas_lookup(TEXAT_CHEST_TOP);
-			case SIDE_RIGHT: return tex_atlas_lookup(TEXAT_CHEST_FRONT_2);
-			case SIDE_LEFT: return tex_atlas_lookup(TEXAT_CHEST_BACK_1);
-			default: return tex_atlas_lookup(TEXAT_CHEST_SIDE);
-		}
-	}
-
-	if(front->type == this->block->type) {
-		switch(side) {
-			case SIDE_TOP:
-			case SIDE_BOTTOM: return tex_atlas_lookup(TEXAT_CHEST_TOP);
-			case SIDE_RIGHT: return tex_atlas_lookup(TEXAT_CHEST_FRONT_1);
-			case SIDE_LEFT: return tex_atlas_lookup(TEXAT_CHEST_BACK_2);
-			default: return tex_atlas_lookup(TEXAT_CHEST_SIDE);
-		}
-	}
-
 	uint8_t tex[SIDE_MAX] = {
 		[SIDE_TOP] = tex_atlas_lookup(TEXAT_CHEST_TOP),
 		[SIDE_BOTTOM] = tex_atlas_lookup(TEXAT_CHEST_TOP),
@@ -92,18 +48,89 @@ static uint8_t getTextureIndex(struct block_info* this, enum side side) {
 		[SIDE_RIGHT] = tex_atlas_lookup(TEXAT_CHEST_SIDE),
 	};
 
-	if(left->type && !right->type)
-		tex[SIDE_RIGHT] = tex_atlas_lookup(TEXAT_CHEST_FRONT_SINGLE);
-	else if(right->type && !left->type)
-		tex[SIDE_LEFT] = tex_atlas_lookup(TEXAT_CHEST_FRONT_SINGLE);
-	else if(front->type && !back->type)
-		tex[SIDE_BACK] = tex_atlas_lookup(TEXAT_CHEST_FRONT_SINGLE);
-	else if(back->type && !front->type)
-		tex[SIDE_FRONT] = tex_atlas_lookup(TEXAT_CHEST_FRONT_SINGLE);
-	else
-		tex[SIDE_BACK] = tex_atlas_lookup(TEXAT_CHEST_FRONT_SINGLE);
+	switch(this->block->metadata) {
+		case 0: tex[SIDE_FRONT] = tex_atlas_lookup(TEXAT_CHEST_FRONT_SINGLE); break;
+		case 1: tex[SIDE_RIGHT] = tex_atlas_lookup(TEXAT_CHEST_FRONT_SINGLE); break;
+		case 2: tex[SIDE_BACK] = tex_atlas_lookup(TEXAT_CHEST_FRONT_SINGLE); break;
+		case 3: tex[SIDE_LEFT] = tex_atlas_lookup(TEXAT_CHEST_FRONT_SINGLE); break;
+	}
 
-	return tex[side];
+ 	return tex[side];
+}
+
+static void onRightClick(struct server_local* s, struct item_data* it,
+						 struct block_info* where, struct block_info* on,
+						 enum side on_side) {
+	if(s->player.active_inventory == &s->player.inventory) {
+		clin_rpc_send(&(struct client_rpc) {
+			.type = CRPC_OPEN_WINDOW,
+			.payload.window_open.window = WINDOWC_CHEST,
+			.payload.window_open.type = WINDOW_TYPE_CHEST,
+			.payload.window_open.slot_count = CHEST_SIZE,
+		});
+
+		struct inventory* inv = malloc(sizeof(struct inventory));
+		inventory_create(inv, &inventory_logic_chest, s, CHEST_SIZE, on->x, on->y, on->z);
+		s->player.active_inventory = inv;
+	}
+}
+
+static bool onItemPlace(struct server_local* s, struct item_data* it,
+						struct block_info* where, struct block_info* on,
+						enum side on_side) {
+	struct block_data blk = (struct block_data) {
+		.type = it->id,
+		.metadata = it->durability,
+		.sky_light = 0,
+		.torch_light = 0,
+	};
+
+	struct block_info blk_info = *where;
+	blk_info.block = &blk;
+
+	if(entity_local_player_block_collide(
+		   (vec3) {s->player.x, s->player.y, s->player.z}, &blk_info))
+		return false;
+
+	for (int i=0; i<MAX_CHESTS; i++) {
+		if (s->chest_pos[i].y < 0) {
+			s->chest_pos[i].x = where->x;
+			s->chest_pos[i].y = where->y;
+			s->chest_pos[i].z = where->z;
+			memset(&s->chest_items[i], 0, 27*sizeof(struct item_data));
+			server_world_set_block(s, where->x, where->y, where->z, blk);
+			return true;
+		}
+	}
+
+	puts("Too many chests");
+	return false;
+}
+
+static size_t getDroppedItem(struct block_info* this, struct item_data* it,
+							 struct random_gen* g, struct server_local* s) {
+	if(it) {
+		it->id = this->block->type;
+		it->durability = this->block->metadata;
+		it->count = 1;
+	} else { //only free chest on first run of getDroppedItem
+		for(int i=0; i<MAX_CHESTS; i++) {
+			if(s->chest_pos[i].x == this->x && s->chest_pos[i].y == this->y && s->chest_pos[i].z == this->z) {
+				for(int j=0; j<MAX_CHEST_SLOTS; j++) {
+					if(s->chest_items[i][j].id) {
+						server_local_spawn_item((vec3) {this->x + 0.5F,
+									this->y + 0.5F,
+									this->z + 0.5F},
+									&s->chest_items[i][j], false, s);
+					}
+				}
+				s->chest_pos[i].y = -1;
+				break;
+			}
+		}
+	}
+
+	return 1;
 }
 
 struct block block_chest = {
@@ -112,9 +139,9 @@ struct block block_chest = {
 	.getBoundingBox = getBoundingBox,
 	.getMaterial = getMaterial,
 	.getTextureIndex = getTextureIndex,
-	.getDroppedItem = block_drop_default,
+	.getDroppedItem = getDroppedItem,
 	.onRandomTick = NULL,
-	.onRightClick = NULL,
+	.onRightClick = onRightClick,
 	.transparent = false,
 	.renderBlock = render_block_full,
 	.renderBlockAlways = NULL,
@@ -132,7 +159,8 @@ struct block block_chest = {
 		.has_damage = false,
 		.max_stack = 64,
 		.renderItem = render_item_block,
-		.onItemPlace = block_place_default,
+		.onItemPlace = onItemPlace,
+		.fuel = 2,
 		.render_data.block.has_default = true,
 		.render_data.block.default_metadata = 0,
 		.render_data.block.default_rotation = 2,
@@ -141,37 +169,3 @@ struct block block_chest = {
 	},
 };
 
-struct block block_locked_chest = {
-	.name = "Chest",
-	.getSideMask = getSideMask,
-	.getBoundingBox = getBoundingBox,
-	.getMaterial = getMaterial,
-	.getTextureIndex = getTextureIndex,
-	.getDroppedItem = block_drop_default,
-	.onRandomTick = NULL,
-	.onRightClick = NULL,
-	.transparent = false,
-	.renderBlock = render_block_full,
-	.renderBlockAlways = NULL,
-	.luminance = 15,
-	.double_sided = false,
-	.can_see_through = false,
-	.ignore_lighting = false,
-	.flammable = false,
-	.place_ignore = false,
-	.digging.hardness = 3750,
-	.digging.tool = TOOL_TYPE_AXE,
-	.digging.min = TOOL_TIER_ANY,
-	.digging.best = TOOL_TIER_MAX,
-	.block_item = {
-		.has_damage = false,
-		.max_stack = 64,
-		.renderItem = render_item_block,
-		.onItemPlace = block_place_default,
-		.render_data.block.has_default = true,
-		.render_data.block.default_metadata = 0,
-		.render_data.block.default_rotation = 2,
-		.armor.is_armor = false,
-		.tool.type = TOOL_TYPE_ANY,
-	},
-};

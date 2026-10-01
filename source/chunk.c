@@ -28,6 +28,7 @@
 #include "game/game_state.h"
 #include "platform/gfx.h"
 #include "stack.h"
+#include "graphics/gfx_settings.h"
 
 #define CHUNK_INDEX(x, y, z) ((x) + ((z) + (y) * CHUNK_SIZE) * CHUNK_SIZE)
 #define CHUNK_LIGHT_INDEX(x, y, z)                                             \
@@ -246,10 +247,12 @@ void chunk_render(struct chunk* c, bool pass, float x, float y, float z) {
 		displaylist_render(c->mesh + SIDE_BACK + offset);
 	}
 
+	#ifdef GFX_DOUBLESIDED
 	if(!pass && c->has_displist[12]) {
 		check_matrix_set(c, &needs_matrix);
 		gfx_cull_func(MODE_NONE);
 		displaylist_render(c->mesh + 12);
 		gfx_cull_func(MODE_BACK);
 	}
+	#endif
 }

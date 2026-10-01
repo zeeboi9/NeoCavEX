@@ -39,6 +39,7 @@ add_executable(cavex
 				source/block/block_grass.c
 				source/block/block_gravel.c
 				source/block/block_ice.c
+				source/block/block_iron_chest.c
 				source/block/block_jukebox.c
 				source/block/block_ladder.c
 				source/block/block_lava.c
@@ -60,6 +61,7 @@ add_executable(cavex
 				source/block/block_sandstone.c
 				source/block/block_sapling.c
 				source/block/blocks.c
+				source/block/block_sign.c
 				source/block/block_slab.c
 				source/block/block_snow.c
 				source/block/block_spawner.c
@@ -73,11 +75,13 @@ add_executable(cavex
 				source/block/block_water.c
 				source/block/block_wool.c
 				source/block/block_workbench.c
+				source/block/block_tree2d.c
 				source/block/face_occlusion.c
 
 				source/entity/entity.c
 				source/entity/entity_local_player.c
 				source/entity/entity_item.c
+				source/entity/entity_monster.c
 
 				source/cNBT/buffer.c
 				source/cNBT/nbt_loading.c
@@ -90,8 +94,12 @@ add_executable(cavex
 				source/game/gui/screen_main.c
 				source/game/gui/screen_select_world.c
 				source/game/gui/screen_inventory.c
+				source/game/gui/screen_iron_chest.c
 				source/game/gui/screen_crafting.c
 				source/game/gui/screen_furnace.c
+				source/game/gui/screen_chest.c
+				source/game/gui/screen_sign.c
+				source/game/gui/screen_pause.c
 				source/game/gui/screen.c
 				source/game/camera.c
 				source/game/game_state.c
@@ -102,9 +110,23 @@ add_executable(cavex
 				source/item/tool.c
 				source/item/recipe.c
 				source/item/items/item_sugarcane.c
-				source/item/items/item_door.c
+
+				source/item/items/item_porkchop.c
+				source/item/items/item_porkchop_cooked.c
+				source/item/items/item_door_wood.c
+				source/item/items/item_door_iron.c
+				source/item/items/item_apple.c
+				source/item/items/item_apple_golden.c
+				source/item/items/item_fish.c
+				source/item/items/item_fish_cooked.c
+				source/item/items/item_bread.c
+				source/item/items/item_mushroom_stew.c
+				source/item/items/item_egg_zombie.c
+				source/item/items/item_flint_steel.c
+				source/item/items/item_seeds.c
 
 				source/network/client_interface.c
+				source/network/complex_block_archive.c
 				source/network/level_archive.c
 				source/network/region_archive.c
 				source/network/server_interface.c
@@ -114,12 +136,16 @@ add_executable(cavex
 				source/network/inventory_player.c
 				source/network/inventory_crafting.c
 				source/network/inventory_furnace.c
+				source/network/inventory_chest.c
+				source/network/inventory_iron_chest.c
+				source/network/inventory_sign.c
 
 				source/graphics/gfx_util.c
 				source/graphics/gui_util.c
 				source/graphics/render_block.c
 				source/graphics/render_item.c
 				source/graphics/render_model.c
+				source/graphics/render_monster.c
 				source/graphics/texture_atlas.c
 
 				source/platform/displaylist.c

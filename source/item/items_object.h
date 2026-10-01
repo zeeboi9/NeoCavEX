@@ -24,6 +24,7 @@ static struct item item_iron_sword = {
 	.has_damage = true,
 	.max_damage = 251,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_SWORD,
@@ -41,6 +42,7 @@ static struct item item_iron_shovel = {
 	.has_damage = true,
 	.max_damage = 251,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_SHOVEL,
@@ -58,6 +60,7 @@ static struct item item_iron_pickaxe = {
 	.has_damage = true,
 	.max_damage = 251,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_PICKAXE,
@@ -75,6 +78,7 @@ static struct item item_iron_axe = {
 	.has_damage = true,
 	.max_damage = 251,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_AXE,
@@ -92,6 +96,7 @@ static struct item item_iron_hoe = {
 	.has_damage = true,
 	.max_damage = 251,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_HOE,
@@ -109,6 +114,7 @@ static struct item item_wood_sword = {
 	.has_damage = true,
 	.max_damage = 60,
 	.max_stack = 1,
+	.fuel = 2,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_SWORD,
@@ -126,6 +132,7 @@ static struct item item_wood_shovel = {
 	.has_damage = true,
 	.max_damage = 60,
 	.max_stack = 1,
+	.fuel = 2,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_SHOVEL,
@@ -143,6 +150,7 @@ static struct item item_wood_pickaxe = {
 	.has_damage = true,
 	.max_damage = 60,
 	.max_stack = 1,
+	.fuel = 2,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_PICKAXE,
@@ -160,6 +168,7 @@ static struct item item_wood_axe = {
 	.has_damage = true,
 	.max_damage = 60,
 	.max_stack = 1,
+	.fuel = 2,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_AXE,
@@ -177,6 +186,7 @@ static struct item item_wood_hoe = {
 	.has_damage = true,
 	.max_damage = 60,
 	.max_stack = 1,
+	.fuel = 2,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_HOE,
@@ -194,6 +204,7 @@ static struct item item_stone_sword = {
 	.has_damage = true,
 	.max_damage = 132,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_SWORD,
@@ -211,6 +222,7 @@ static struct item item_stone_shovel = {
 	.has_damage = true,
 	.max_damage = 132,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_SHOVEL,
@@ -228,6 +240,7 @@ static struct item item_stone_pickaxe = {
 	.has_damage = true,
 	.max_damage = 132,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_PICKAXE,
@@ -245,6 +258,7 @@ static struct item item_stone_axe = {
 	.has_damage = true,
 	.max_damage = 132,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_AXE,
@@ -262,6 +276,7 @@ static struct item item_stone_hoe = {
 	.has_damage = true,
 	.max_damage = 132,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_HOE,
@@ -279,6 +294,7 @@ static struct item item_diamond_sword = {
 	.has_damage = true,
 	.max_damage = 1562,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_SWORD,
@@ -296,6 +312,7 @@ static struct item item_diamond_shovel = {
 	.has_damage = true,
 	.max_damage = 1562,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_SHOVEL,
@@ -313,6 +330,7 @@ static struct item item_diamond_pickaxe = {
 	.has_damage = true,
 	.max_damage = 1562,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_PICKAXE,
@@ -330,6 +348,7 @@ static struct item item_diamond_axe = {
 	.has_damage = true,
 	.max_damage = 1562,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_AXE,
@@ -347,6 +366,7 @@ static struct item item_diamond_hoe = {
 	.has_damage = true,
 	.max_damage = 1562,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_HOE,
@@ -364,6 +384,7 @@ static struct item item_gold_sword = {
 	.has_damage = true,
 	.max_damage = 33,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_SWORD,
@@ -381,6 +402,7 @@ static struct item item_gold_shovel = {
 	.has_damage = true,
 	.max_damage = 33,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_SHOVEL,
@@ -398,6 +420,7 @@ static struct item item_gold_pickaxe = {
 	.has_damage = true,
 	.max_damage = 33,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_PICKAXE,
@@ -415,6 +438,7 @@ static struct item item_gold_axe = {
 	.has_damage = true,
 	.max_damage = 33,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_AXE,
@@ -432,6 +456,7 @@ static struct item item_gold_hoe = {
 	.has_damage = true,
 	.max_damage = 33,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_HOE,
@@ -444,41 +469,15 @@ static struct item item_gold_hoe = {
 	},
 };
 
-static struct item item_flint_steel = {
-	.name = "Flint and Steel",
-	.has_damage = true,
-	.max_damage = 65,
-	.max_stack = 1,
-	.renderItem = render_item_flat,
-	.armor.is_armor = false,
-	.tool.type = TOOL_TYPE_ANY,
-	.render_data = {
-		.item = {
-			.texture_x = 5,
-			.texture_y = 0,
-		},
-	},
-};
+extern struct item item_flint_steel;
 
-static struct item item_apple = {
-	.name = "Apple",
-	.has_damage = false,
-	.max_stack = 1,
-	.renderItem = render_item_flat,
-	.armor.is_armor = false,
-	.tool.type = TOOL_TYPE_ANY,
-	.render_data = {
-		.item = {
-			.texture_x = 10,
-			.texture_y = 0,
-		},
-	},
-};
+extern struct item item_apple;
 
 static struct item item_bow = {
 	.name = "Bow",
 	.has_damage = false,
 	.max_stack = 1,
+	.fuel = 1,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -494,6 +493,7 @@ static struct item item_arrow = {
 	.name = "Arrow",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -509,6 +509,7 @@ static struct item item_coal = {
 	.name = "Coal",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 8,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -524,6 +525,7 @@ static struct item item_diamond = {
 	.name = "Diamond",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -539,6 +541,7 @@ static struct item item_iron = {
 	.name = "Iron Ingot",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -554,6 +557,7 @@ static struct item item_gold = {
 	.name = "Gold Ingot",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -569,6 +573,7 @@ static struct item item_stick = {
 	.name = "Stick",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 1,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -584,6 +589,7 @@ static struct item item_diamond_helmet = {
 	.name = "Diamond Helmet",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_HELMET,
@@ -601,6 +607,7 @@ static struct item item_diamond_chestplate = {
 	.name = "Diamond Chestplate",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_CHESTPLATE,
@@ -618,6 +625,7 @@ static struct item item_diamond_leggings = {
 	.name = "Diamond Leggings",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_LEGGINGS,
@@ -635,6 +643,7 @@ static struct item item_diamond_boots = {
 	.name = "Diamond Boots",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_BOOTS,
@@ -652,6 +661,7 @@ static struct item item_leather_helmet = {
 	.name = "Leather Helmet",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_HELMET,
@@ -669,6 +679,7 @@ static struct item item_leather_chestplate = {
 	.name = "Leather Chestplate",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_CHESTPLATE,
@@ -686,6 +697,7 @@ static struct item item_leather_leggings = {
 	.name = "Leather Leggings",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_LEGGINGS,
@@ -703,6 +715,7 @@ static struct item item_leather_boots = {
 	.name = "Leather Boots",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_BOOTS,
@@ -720,6 +733,7 @@ static struct item item_chain_helmet = {
 	.name = "Chain Helmet",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_HELMET,
@@ -737,6 +751,7 @@ static struct item item_chain_chestplate = {
 	.name = "Chain Chestplate",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_CHESTPLATE,
@@ -754,6 +769,7 @@ static struct item item_chain_leggings = {
 	.name = "Chain Leggings",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_LEGGINGS,
@@ -771,6 +787,7 @@ static struct item item_chain_boots = {
 	.name = "Chain Boots",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_BOOTS,
@@ -788,6 +805,7 @@ static struct item item_iron_helmet = {
 	.name = "Iron Helmet",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_HELMET,
@@ -805,6 +823,7 @@ static struct item item_iron_chestplate = {
 	.name = "Iron Chestplate",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_CHESTPLATE,
@@ -822,6 +841,7 @@ static struct item item_iron_leggings = {
 	.name = "Iron Leggings",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_LEGGINGS,
@@ -839,6 +859,7 @@ static struct item item_iron_boots = {
 	.name = "Iron Boots",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_BOOTS,
@@ -856,6 +877,7 @@ static struct item item_gold_helmet = {
 	.name = "Gold Helmet",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_HELMET,
@@ -873,6 +895,7 @@ static struct item item_gold_chestplate = {
 	.name = "Gold Chestplate",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_CHESTPLATE,
@@ -890,6 +913,7 @@ static struct item item_gold_leggings = {
 	.name = "Gold Leggings",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_LEGGINGS,
@@ -907,6 +931,7 @@ static struct item item_gold_boots = {
 	.name = "Gold Boots",
 	.has_damage = true,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = true,
 	.armor.type = ARMOR_TYPE_BOOTS,
@@ -920,55 +945,17 @@ static struct item item_gold_boots = {
 	},
 };
 
-static struct item item_porkchop = {
-	.name = "Raw Porkchop",
-	.has_damage = false,
-	.max_stack = 1,
-	.renderItem = render_item_flat,
-	.armor.is_armor = false,
-	.tool.type = TOOL_TYPE_ANY,
-	.render_data = {
-		.item = {
-			.texture_x = 7,
-			.texture_y = 5,
-		},
-	},
-};
+extern struct item item_porkchop;
 
-static struct item item_porkchop_cooked = {
-	.name = "Cooked Porkchop",
-	.has_damage = false,
-	.max_stack = 1,
-	.renderItem = render_item_flat,
-	.armor.is_armor = false,
-	.tool.type = TOOL_TYPE_ANY,
-	.render_data = {
-		.item = {
-			.texture_x = 8,
-			.texture_y = 5,
-		},
-	},
-};
+extern struct item item_porkchop_cooked;
 
-static struct item item_seeds = {
-	.name = "Seeds",
-	.has_damage = false,
-	.max_stack = 64,
-	.renderItem = render_item_flat,
-	.armor.is_armor = false,
-	.tool.type = TOOL_TYPE_ANY,
-	.render_data = {
-		.item = {
-			.texture_x = 9,
-			.texture_y = 0,
-		},
-	},
-};
+extern struct item item_seeds;
 
 static struct item item_wheat = {
 	.name = "Wheat",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -980,25 +967,13 @@ static struct item item_wheat = {
 	},
 };
 
-static struct item item_bread = {
-	.name = "Bread",
-	.has_damage = false,
-	.max_stack = 1,
-	.renderItem = render_item_flat,
-	.armor.is_armor = false,
-	.tool.type = TOOL_TYPE_ANY,
-	.render_data = {
-		.item = {
-			.texture_x = 9,
-			.texture_y = 2,
-		},
-	},
-};
+extern struct item item_bread;
 
 static struct item item_flint = {
 	.name = "Flint",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1014,6 +989,7 @@ static struct item item_string = {
 	.name = "String",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1025,25 +1001,15 @@ static struct item item_string = {
 	},
 };
 
-static struct item item_redstone = {
-	.name = "Redstone",
-	.has_damage = false,
-	.max_stack = 64,
-	.renderItem = render_item_flat,
-	.armor.is_armor = false,
-	.tool.type = TOOL_TYPE_ANY,
-	.render_data = {
-		.item = {
-			.texture_x = 8,
-			.texture_y = 3,
-		},
-	},
-};
+
+extern struct item item_redstone;
+
 
 static struct item item_snow_ball = {
 	.name = "Snowball",
 	.has_damage = false,
 	.max_stack = 16,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1059,6 +1025,7 @@ static struct item item_clay_ball = {
 	.name = "Clay",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1074,6 +1041,7 @@ static struct item item_glowstone_dust = {
 	.name = "Glowstone Dust",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1089,6 +1057,7 @@ static struct item item_dye = {
 	.name = "Ink Sac",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1104,6 +1073,7 @@ static struct item item_bowl = {
 	.name = "Bowl",
 	.has_damage = false,
 	.max_stack = 1,
+	.fuel = 1,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1115,25 +1085,14 @@ static struct item item_bowl = {
 	},
 };
 
-static struct item item_mushroom_stew = {
-	.name = "Mushroom Stew",
-	.has_damage = false,
-	.max_stack = 1,
-	.renderItem = render_item_flat,
-	.armor.is_armor = false,
-	.tool.type = TOOL_TYPE_ANY,
-	.render_data = {
-		.item = {
-			.texture_x = 8,
-			.texture_y = 4,
-		},
-	},
-};
+
+extern struct item item_mushroom_stew;
 
 static struct item item_feather = {
 	.name = "Feather",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1149,6 +1108,7 @@ static struct item item_gunpowder = {
 	.name = "Gunpowder",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1164,6 +1124,7 @@ static struct item item_leather = {
 	.name = "Leather",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1179,6 +1140,7 @@ static struct item item_brick = {
 	.name = "Brick",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1194,6 +1156,7 @@ static struct item item_paper = {
 	.name = "Paper",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1209,6 +1172,7 @@ static struct item item_book = {
 	.name = "Book",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1224,6 +1188,7 @@ static struct item item_sugar = {
 	.name = "Sugar",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1239,6 +1204,7 @@ static struct item item_cake = {
 	.name = "Cake",
 	.has_damage = false,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1250,25 +1216,14 @@ static struct item item_cake = {
 	},
 };
 
-static struct item item_bed = {
-	.name = "Bed",
-	.has_damage = false,
-	.max_stack = 1,
-	.renderItem = render_item_flat,
-	.armor.is_armor = false,
-	.tool.type = TOOL_TYPE_ANY,
-	.render_data = {
-		.item = {
-			.texture_x = 13,
-			.texture_y = 2,
-		},
-	},
-};
+
+extern struct item item_bed;
 
 static struct item item_shears = {
 	.name = "Shears",
 	.has_damage = false,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1280,40 +1235,16 @@ static struct item item_shears = {
 	},
 };
 
-static struct item item_fish = {
-	.name = "Raw Fish",
-	.has_damage = false,
-	.max_stack = 1,
-	.renderItem = render_item_flat,
-	.armor.is_armor = false,
-	.tool.type = TOOL_TYPE_ANY,
-	.render_data = {
-		.item = {
-			.texture_x = 9,
-			.texture_y = 5,
-		},
-	},
-};
 
-static struct item item_fish_cooked = {
-	.name = "Cooked Fish",
-	.has_damage = false,
-	.max_stack = 1,
-	.renderItem = render_item_flat,
-	.armor.is_armor = false,
-	.tool.type = TOOL_TYPE_ANY,
-	.render_data = {
-		.item = {
-			.texture_x = 10,
-			.texture_y = 5,
-		},
-	},
-};
+extern struct item item_fish;
+
+extern struct item item_fish_cooked;
 
 static struct item item_cookie = {
 	.name = "Cookie",
 	.has_damage = false,
 	.max_stack = 8,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1325,25 +1256,24 @@ static struct item item_cookie = {
 	},
 };
 
-static struct item item_apple_golden = {
-	.name = "Golden Apple",
-	.has_damage = false,
-	.max_stack = 1,
-	.renderItem = render_item_flat,
-	.armor.is_armor = false,
-	.tool.type = TOOL_TYPE_ANY,
-	.render_data = {
-		.item = {
-			.texture_x = 11,
-			.texture_y = 0,
-		},
-	},
-};
+extern struct item item_apple_golden;
+
+
+extern struct item item_door_wood;
+
+extern struct item item_door_iron;
+
+extern struct item item_bucket;
+
+extern struct item item_bucket_water;
+
+extern struct item item_bucket_lava;
 
 static struct item item_slime_ball = {
 	.name = "Slimeball",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1359,6 +1289,7 @@ static struct item item_egg = {
 	.name = "Egg",
 	.has_damage = false,
 	.max_stack = 16,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1374,6 +1305,7 @@ static struct item item_bone = {
 	.name = "Bone",
 	.has_damage = false,
 	.max_stack = 64,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1389,6 +1321,7 @@ static struct item item_saddle = {
 	.name = "Saddle",
 	.has_damage = false,
 	.max_stack = 1,
+	.fuel = 0,
 	.renderItem = render_item_flat,
 	.armor.is_armor = false,
 	.tool.type = TOOL_TYPE_ANY,
@@ -1401,5 +1334,11 @@ static struct item item_saddle = {
 };
 
 extern struct item item_sugarcane;
+<<<<<<< HEAD
 extern struct item item_door_wood;
 extern struct item item_door_iron;
+=======
+extern struct item item_egg_zombie;
+extern struct item item_minecart;
+
+>>>>>>> other-fork/master

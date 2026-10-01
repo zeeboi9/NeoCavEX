@@ -30,6 +30,7 @@ static struct thread_channel clin_empty_msg;
 
 static ptime_t last_pos_update;
 
+
 void clin_chunk(w_coord_t x, w_coord_t y, w_coord_t z, w_coord_t sx,
 				w_coord_t sy, w_coord_t sz, uint8_t* ids, uint8_t* metadata,
 				uint8_t* lighting_sky, uint8_t* lighting_torch) {
@@ -116,6 +117,14 @@ void clin_process(struct client_rpc* call) {
 				}
 			}
 
+			dict_entity_it_t it;
+			dict_entity_it(it, gstate.entities);
+
+			while(!dict_entity_end_p(it)) {
+				free(dict_entity_ref(it)->value);
+				dict_entity_next(it);
+			}
+
 			dict_entity_reset(gstate.entities);
 
 			gstate.windows[WINDOWC_INVENTORY]
@@ -127,10 +136,15 @@ void clin_process(struct client_rpc* call) {
 			gstate.world_loaded = false;
 			gstate.world.dimension = call->payload.world_reset.dimension;
 
-			gstate.local_player = dict_entity_safe_get(
+			struct entity** local_player_ptr = dict_entity_safe_get(
 				gstate.entities, call->payload.world_reset.local_entity);
+			*local_player_ptr = malloc(sizeof(struct entity));
+			assert(*local_player_ptr);
+			gstate.local_player = *local_player_ptr;
 			entity_local_player(call->payload.world_reset.local_entity,
 								gstate.local_player, &gstate.world);
+
+			gstate.local_player->health = MAX_PLAYER_HEALTH;
 
 			if(gstate.current_screen == &screen_ingame)
 				screen_set(&screen_load_world);
@@ -176,6 +190,17 @@ void clin_process(struct client_rpc* call) {
 						screen_furnace_set_windowc(window);
 						screen_set(&screen_furnace);
 						break;
+					case WINDOW_TYPE_CHEST:
+						screen_chest_set_windowc(window);
+						screen_set(&screen_chest);
+						break;
+					case WINDOW_TYPE_IRON_CHEST:
+						screen_iron_chest_set_windowc(window);
+						screen_set(&screen_iron_chest);
+						break;
+					case WINDOW_TYPE_SIGN:
+						screen_sign_set_windowc(window);
+						screen_set(&screen_sign);
 					default: break;
 				}
 			}
@@ -219,18 +244,49 @@ void clin_process(struct client_rpc* call) {
 
 			break;
 		case CRPC_SPAWN_ITEM: {
-			struct entity* e = dict_entity_safe_get(
+			struct entity** e_ptr = dict_entity_safe_get(
 				gstate.entities, call->payload.spawn_item.entity_id);
+			*e_ptr = malloc(sizeof(struct entity));
+			struct entity* e = *e_ptr;
+			assert(e);
 			entity_item(call->payload.spawn_item.entity_id, e, false,
 						&gstate.world, call->payload.spawn_item.item);
 			e->teleport(e, call->payload.spawn_item.pos);
+			glm_vec3_copy(call->payload.spawn_item.vel, e->vel);
 		} break;
+		case CRPC_SPAWN_MONSTER: {
+			struct entity** e_ptr = dict_entity_safe_get(
+				gstate.entities, call->payload.spawn_monster.entity_id);
+			*e_ptr = malloc(sizeof(struct entity));
+			struct entity* e = *e_ptr;
+			assert(e);
+			entity_monster(call->payload.spawn_monster.entity_id, e, false,
+						&gstate.world, call->payload.spawn_monster.monster_id);
+			e->teleport(e, call->payload.spawn_monster.pos);
+		} break;
+
+		case CRPC_SPAWN_MINECART: {
+		    struct entity** e_ptr = dict_entity_safe_get(
+		        gstate.entities,
+		        call->payload.spawn_minecart.entity_id
+		    );
+		    *e_ptr = malloc(sizeof(struct entity));
+		    struct entity* e = *e_ptr;
+		    assert(e);
+
+		    entity_minecart(call->payload.spawn_minecart.entity_id,
+		                    e,
+		                    false,                
+		                    &gstate.world);
+		    e->teleport(e, call->payload.spawn_minecart.pos);
+		} break;
+
 		case CRPC_PICKUP_ITEM: {
 			if(gstate.local_player
 			   && call->payload.pickup_item.collector_id
 				   == gstate.local_player->id) {
-				struct entity* e = dict_entity_get(
-					gstate.entities, call->payload.pickup_item.entity_id);
+				struct entity* e = *(dict_entity_get(
+					gstate.entities, call->payload.pickup_item.entity_id));
 				if(e)
 					glm_vec3_copy((vec3) {gstate.camera.x,
 										  gstate.camera.y - 0.2F,
@@ -239,15 +295,20 @@ void clin_process(struct client_rpc* call) {
 			}
 		} break;
 		case CRPC_ENTITY_DESTROY:
+			free(*dict_entity_get(gstate.entities,
+							  call->payload.entity_destroy.entity_id));
 			dict_entity_erase(gstate.entities,
 							  call->payload.entity_destroy.entity_id);
 			break;
 		case CRPC_ENTITY_MOVE: {
-			struct entity* e = dict_entity_get(
-				gstate.entities, call->payload.entity_move.entity_id);
+			struct entity* e = *(dict_entity_get(
+				gstate.entities, call->payload.entity_move.entity_id));
 			if(e)
 				glm_vec3_copy(call->payload.entity_move.pos, e->network_pos);
 		} break;
+		case CRPC_PLAYER_SET_HEALTH:
+			if (gstate.local_player) gstate.local_player->health = call->payload.player_set_health.health;
+		break;
 	}
 }
 
@@ -276,6 +337,7 @@ void clin_update() {
 			.payload.player_pos.z = gstate.camera.z,
 			.payload.player_pos.rx = -glm_deg(gstate.camera.rx),
 			.payload.player_pos.ry = glm_deg(gstate.camera.ry) - 90.0F,
+			.payload.player_pos.vel_y = gstate.local_player->vel[1]
 		});
 		last_pos_update = time_get();
 	}
@@ -287,3 +349,4 @@ void clin_rpc_send(struct client_rpc* call) {
 	*empty = *call;
 	tchannel_send(&clin_inbox, empty, true);
 }
+

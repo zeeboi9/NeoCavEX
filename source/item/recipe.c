@@ -330,6 +330,11 @@ void recipe_init() {
 		(struct item_data) {.id = BLOCK_PLANKS}, false);
 	recipe_add(
 		recipes_crafting,
+		(struct item_data) {.id = BLOCK_IRON_CHEST, .durability = 0, .count = 1}, 3,
+		3, (uint8_t[]) {1, 1, 1, 1, 0, 1, 1, 1, 1},
+		(struct item_data) {.id = ITEM_IRON}, false);
+	recipe_add(
+		recipes_crafting,
 		(struct item_data) {.id = BLOCK_FURNACE, .durability = 0, .count = 1},
 		3, 3, (uint8_t[]) {1, 1, 1, 1, 0, 1, 1, 1, 1},
 		(struct item_data) {.id = BLOCK_COBBLESTONE}, false);
@@ -362,6 +367,16 @@ void recipe_init() {
 		(struct item_data) {.id = BLOCK_LADDER, .durability = 0, .count = 2}, 3,
 		3, (uint8_t[]) {1, 0, 1, 1, 1, 1, 1, 0, 1},
 		(struct item_data) {.id = ITEM_STICK}, false);
+	recipe_add(
+		recipes_crafting,
+		(struct item_data) {.id = ITEM_MINECART, .durability = 0, .count = 1}, 3, 2,
+		(uint8_t[]) {1, 0, 1, 1, 1, 1}, (struct item_data) {.id = ITEM_IRON},
+		false);
+	recipe_add(
+		recipes_crafting,
+		(struct item_data) {.id = ITEM_BUCKET, .durability = 0, .count = 1}, 3, 2,
+		(uint8_t[]) {1, 0, 1, 0, 1, 0}, (struct item_data) {.id = ITEM_IRON},
+		false);
 	recipe_add(
 		recipes_crafting,
 		(struct item_data) {.id = BLOCK_RAIL, .durability = 0, .count = 16}, 3,
@@ -420,6 +435,12 @@ void recipe_init() {
 		(struct item_data) {.id = BLOCK_TRAP_DOOR, .durability = 0, .count = 2},
 		3, 2, (uint8_t[]) {1, 1, 1, 1, 1, 1},
 		(struct item_data) {.id = BLOCK_PLANKS}, false);
+	recipe_add(
+		recipes_crafting,
+		(struct item_data) {.id = BLOCK_SIGN, .durability = 0, .count = 3},
+		3, 3, (uint8_t[]) {1, 1, 1, 1, 1, 1, 0, 2, 0},
+		(struct item_data) {.id = BLOCK_PLANKS}, false,
+		(struct item_data) {.id = ITEM_STICK}, false);
 	recipe_add(
 		recipes_crafting,
 		(struct item_data) {.id = ITEM_DOOR_IRON, .durability = 0, .count = 1},
@@ -550,7 +571,7 @@ void recipe_init() {
 			   (struct item_data) {.id = BLOCK_TORCH}, false);
 	recipe_add(recipes_crafting,
 			   (struct item_data) {
-				   .id = BLOCK_REDSTONE_TORCH, .durability = 0, .count = 1},
+				   .id = BLOCK_REDSTONE_TORCH_LIT, .durability = 0, .count = 1},
 			   1, 2, (uint8_t[]) {1, 2},
 			   (struct item_data) {.id = ITEM_REDSTONE}, false,
 			   (struct item_data) {.id = ITEM_STICK}, false);

@@ -166,12 +166,12 @@ static bool onItemPlace(struct server_local* s, struct item_data* it,
 		   (vec3) {s->player.x, s->player.y, s->player.z}, &blk_info))
 		return false;
 
-	server_world_set_block(&s->world, where->x, where->y, where->z, blk);
+	server_world_set_block(s, where->x, where->y, where->z, blk);
 	return true;
 }
 
 static size_t drop_wood(struct block_info* this, struct item_data* it,
-						struct random_gen* g) {
+						struct random_gen* g, struct server_local* s) {
 	if(it) {
 		it->id = BLOCK_PLANKS;
 		it->durability = 0;
@@ -182,7 +182,7 @@ static size_t drop_wood(struct block_info* this, struct item_data* it,
 }
 
 static size_t drop_cobblestone(struct block_info* this, struct item_data* it,
-							   struct random_gen* g) {
+							   struct random_gen* g, struct server_local* s) {
 	if(it) {
 		it->id = BLOCK_COBBLESTONE;
 		it->durability = 0;
@@ -220,6 +220,7 @@ struct block block_wooden_stairs = {
 		.max_stack = 64,
 		.renderItem = render_item_block,
 		.onItemPlace = onItemPlace,
+		.fuel = 1,
 		.render_data.block.has_default = true,
 		.render_data.block.default_metadata = 2,
 		.render_data.block.default_rotation = 0,
@@ -256,6 +257,7 @@ struct block block_stone_stairs = {
 		.max_stack = 64,
 		.renderItem = render_item_block,
 		.onItemPlace = onItemPlace,
+		.fuel = 0,
 		.render_data.block.has_default = true,
 		.render_data.block.default_metadata = 2,
 		.render_data.block.default_rotation = 0,

@@ -22,6 +22,7 @@
 #include "../block/blocks.h"
 #include "../graphics/render_item.h"
 #include "items_object.h"
+#include "../network/server_local.h"
 
 struct item* items[ITEMS_MAX];
 
@@ -109,10 +110,10 @@ void items_init() {
 	items[322] = &item_apple_golden;
 	// sign
 	items[324] = &item_door_wood;
-	// bucket
-	// water bucket
-	// lava bucket
-	// minecart
+	items[325] = &item_bucket;
+	items[326] = &item_bucket_water;
+	items[327] = &item_bucket_lava;
+	items[328] = &item_minecart;
 	items[329] = &item_saddle;
 	items[330] = &item_door_iron;
 	items[331] = &item_redstone;
@@ -144,6 +145,7 @@ void items_init() {
 	items[357] = &item_cookie;
 	// map
 	items[359] = &item_shears;
+	items[360] = &item_egg_zombie;
 
 	// golden record
 	// green record
@@ -158,3 +160,5 @@ bool item_is_block(struct item_data* item) {
 	assert(item);
 	return item_get(item) && item->id < 256 && blocks[item->id];
 }
+
+

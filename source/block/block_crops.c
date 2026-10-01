@@ -18,6 +18,8 @@
 */
 
 #include "blocks.h"
+#include "../network/server_local.h"
+#include "../network/server_world.h"
 
 static enum block_material getMaterial(struct block_info* this) {
 	return MATERIAL_ORGANIC;
@@ -50,7 +52,7 @@ static uint8_t getTextureIndex(struct block_info* this, enum side side) {
 }
 
 static size_t getDroppedItem(struct block_info* this, struct item_data* it,
-							 struct random_gen* g) {
+							 struct random_gen* g, struct server_local* s) {
 	bool has_seeds = this->block->metadata >= 5;
 	bool has_wheat = this->block->metadata == 7;
 
@@ -69,6 +71,24 @@ static size_t getDroppedItem(struct block_info* this, struct item_data* it,
 	return (has_seeds ? (has_wheat ? 2 : 1) : 0);
 }
 
+static void onRandomTick(struct server_local* s, struct block_info* blk) {
+    // check if there's enough light to grow.
+    if (blk->block->sky_light < 9 && blk->block->torch_light < 9)
+        return;
+
+    // get the current crop growt stage
+    uint8_t stage = blk->block->metadata;
+
+    // check if it's grown or not
+    if (stage < 7) {
+        // add one as long as it's not fully grown (7)
+        blk->block->metadata = stage + 1;
+        
+        // update the block
+        server_world_set_block(s, blk->x, blk->y, blk->z, *blk->block);
+    }
+}
+
 struct block block_crops = {
 	.name = "Crops",
 	.getSideMask = getSideMask,
@@ -76,7 +96,7 @@ struct block block_crops = {
 	.getMaterial = getMaterial,
 	.getTextureIndex = getTextureIndex,
 	.getDroppedItem = getDroppedItem,
-	.onRandomTick = NULL,
+	.onRandomTick = onRandomTick,
 	.onRightClick = NULL,
 	.transparent = false,
 	.renderBlock = render_block_crops,
@@ -97,6 +117,7 @@ struct block block_crops = {
 		.max_stack = 64,
 		.renderItem = render_item_flat,
 		.onItemPlace = block_place_default,
+		.fuel = 0,
 		.armor.is_armor = false,
 		.tool.type = TOOL_TYPE_ANY,
 	},

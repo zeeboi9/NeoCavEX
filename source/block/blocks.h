@@ -44,10 +44,14 @@ struct block {
 	size_t (*renderBlockAlways)(struct displaylist*, struct block_info*,
 								enum side, struct block_info*, uint8_t*, bool);
 	size_t (*getDroppedItem)(struct block_info*, struct item_data*,
-							 struct random_gen*);
+							 struct random_gen*, struct server_local*);
 	void (*onRandomTick)(struct server_local*, struct block_info*);
 	void (*onRightClick)(struct server_local*, struct item_data*,
 						 struct block_info*, struct block_info*, enum side);
+    void (*onWorldTick)(struct server_local* s, struct block_info* this);
+	void (*onNeighbourBlockChange)(struct server_local* s, struct block_info* info);
+	void (*onDay)(struct server_local* s, struct block_info* info);
+	void (*onNight)(struct server_local* s, struct block_info* info);
 	bool transparent;
 	uint8_t luminance : 4;
 	uint8_t opacity : 4;
@@ -108,7 +112,8 @@ extern struct block block_spawner;
 extern struct block block_cobblestone;
 extern struct block block_mossstone;
 extern struct block block_chest;
-extern struct block block_locked_chest;
+extern struct block block_iron_chest;
+extern struct block block_redstone_wire;
 extern struct block block_cactus;
 extern struct block block_pumpkin;
 extern struct block block_pumpkin_lit;
@@ -153,6 +158,9 @@ extern struct block block_fence;
 extern struct block block_trapdoor;
 extern struct block block_wooden_door;
 extern struct block block_iron_door;
+extern struct block block_tree2d;
+extern struct block block_sign;
+//extern struct block block_minecart;
 
 extern struct block* blocks[256];
 
@@ -168,6 +176,9 @@ bool block_place_default(struct server_local* s, struct item_data* it,
 						 struct block_info* where, struct block_info* on,
 						 enum side on_side);
 size_t block_drop_default(struct block_info* this, struct item_data* it,
-						  struct random_gen* g);
+						  struct random_gen* g, struct server_local* s);
+
+
+void notifyNeighbours(struct server_local* s, w_coord_t x, w_coord_t y, w_coord_t z);
 
 #endif

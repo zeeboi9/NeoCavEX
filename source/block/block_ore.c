@@ -54,7 +54,7 @@ static uint8_t getTextureIndex(struct block_info* this, enum side side) {
 }
 
 static size_t drop_coal(struct block_info* this, struct item_data* it,
-						struct random_gen* g) {
+						struct random_gen* g, struct server_local* s) {
 	if(it) {
 		it->id = ITEM_COAL;
 		it->durability = 0;
@@ -65,7 +65,7 @@ static size_t drop_coal(struct block_info* this, struct item_data* it,
 }
 
 static size_t drop_diamond(struct block_info* this, struct item_data* it,
-						   struct random_gen* g) {
+						   struct random_gen* g, struct server_local* s) {
 	if(it) {
 		it->id = ITEM_DIAMOND;
 		it->durability = 0;
@@ -76,7 +76,7 @@ static size_t drop_diamond(struct block_info* this, struct item_data* it,
 }
 
 static size_t drop_redstone(struct block_info* this, struct item_data* it,
-							struct random_gen* g) {
+							struct random_gen* g, struct server_local* s) {
 	if(it) {
 		it->id = ITEM_REDSTONE;
 		it->durability = 0;
@@ -87,7 +87,7 @@ static size_t drop_redstone(struct block_info* this, struct item_data* it,
 }
 
 static size_t drop_lapis(struct block_info* this, struct item_data* it,
-						 struct random_gen* g) {
+						 struct random_gen* g, struct server_local* s) {
 	if(it) {
 		it->id = ITEM_DYE;
 		it->durability = 4;
@@ -124,6 +124,7 @@ struct block block_coalore = {
 		.max_stack = 64,
 		.renderItem = render_item_block,
 		.onItemPlace = block_place_default,
+		.fuel = 0,
 		.render_data.block.has_default = false,
 		.armor.is_armor = false,
 		.tool.type = TOOL_TYPE_ANY,
@@ -157,6 +158,7 @@ struct block block_ironore = {
 		.max_stack = 64,
 		.renderItem = render_item_block,
 		.onItemPlace = block_place_default,
+		.fuel = 0,
 		.render_data.block.has_default = false,
 		.armor.is_armor = false,
 		.tool.type = TOOL_TYPE_ANY,
@@ -190,6 +192,7 @@ struct block block_goldore = {
 		.max_stack = 64,
 		.renderItem = render_item_block,
 		.onItemPlace = block_place_default,
+		.fuel = 0,
 		.render_data.block.has_default = false,
 		.armor.is_armor = false,
 		.tool.type = TOOL_TYPE_ANY,
@@ -223,6 +226,7 @@ struct block block_diamondore = {
 		.max_stack = 64,
 		.renderItem = render_item_block,
 		.onItemPlace = block_place_default,
+		.fuel = 0,
 		.render_data.block.has_default = false,
 		.armor.is_armor = false,
 		.tool.type = TOOL_TYPE_ANY,
@@ -256,6 +260,7 @@ struct block block_redstoneore = {
 		.max_stack = 64,
 		.renderItem = render_item_block,
 		.onItemPlace = block_place_default,
+		.fuel = 0,
 		.render_data.block.has_default = false,
 		.armor.is_armor = false,
 		.tool.type = TOOL_TYPE_ANY,
@@ -289,6 +294,7 @@ struct block block_redstoneore_lit = {
 		.max_stack = 64,
 		.renderItem = render_item_block,
 		.onItemPlace = block_place_default,
+		.fuel = 0,
 		.render_data.block.has_default = false,
 		.armor.is_armor = false,
 		.tool.type = TOOL_TYPE_ANY,
@@ -322,6 +328,7 @@ struct block block_lapisore = {
 		.max_stack = 64,
 		.renderItem = render_item_block,
 		.onItemPlace = block_place_default,
+		.fuel = 0,
 		.render_data.block.has_default = false,
 		.armor.is_armor = false,
 		.tool.type = TOOL_TYPE_ANY,

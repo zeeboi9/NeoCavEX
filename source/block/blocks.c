@@ -85,7 +85,7 @@ void blocks_init() {
 	blocks[52] = &block_spawner;
 	blocks[53] = &block_wooden_stairs;
 	blocks[54] = &block_chest;
-	// redstone wire
+	blocks[55] = &block_redstone_wire;
 	blocks[56] = &block_diamondore;
 	blocks[57] = &block_diamond;
 	blocks[58] = &block_workbench;
@@ -93,12 +93,12 @@ void blocks_init() {
 	blocks[60] = &block_farmland;
 	blocks[61] = &block_furnaceoff;
 	blocks[62] = &block_furnaceon;
-	// sign standing
+	// sign standing (may be unused)
 	blocks[64] = &block_wooden_door;
 	blocks[65] = &block_ladder;
 	blocks[66] = &block_rail;
 	blocks[67] = &block_stone_stairs;
-	// sign wall mounted
+	blocks[68] = &block_sign;
 	// lever
 	blocks[70] = &block_stone_pressure_plate;
 	blocks[71] = &block_iron_door;
@@ -125,8 +125,10 @@ void blocks_init() {
 	blocks[92] = &block_cake;
 	// repeater
 	// repeater
-	blocks[95] = &block_locked_chest;
+	blocks[95] = &block_iron_chest;
 	blocks[96] = &block_trapdoor;
+	blocks[97] = &block_tree2d;
+	//blocks[98] = &block_minecart;	
 
 	for(int k = 0; k < 256; k++) {
 		if(blocks[k]) {
@@ -221,12 +223,12 @@ bool block_place_default(struct server_local* s, struct item_data* it,
 		   (vec3) {s->player.x, s->player.y, s->player.z}, &blk_info))
 		return false;
 
-	server_world_set_block(&s->world, where->x, where->y, where->z, blk);
+	server_world_set_block(s, where->x, where->y, where->z, blk);
 	return true;
 }
 
 size_t block_drop_default(struct block_info* this, struct item_data* it,
-						  struct random_gen* g) {
+						  struct random_gen* g, struct server_local* s) {
 	if(it) {
 		it->id = this->block->type;
 		it->durability = 0;
@@ -235,3 +237,34 @@ size_t block_drop_default(struct block_info* this, struct item_data* it,
 
 	return 1;
 }
+
+static const int dx[6] = {  1, -1,  0,  0,  0,  0 };
+static const int dy[6] = {  0,  0,  0,  0,  1, -1 };
+static const int dz[6] = {  0,  0,  1, -1,  0,  0 };
+
+void notifyNeighbours(struct server_local* s,
+                      w_coord_t x, w_coord_t y, w_coord_t z)
+{
+    for (int i = 0; i < 6; i++) {
+        w_coord_t nx = x + dx[i];
+        w_coord_t ny = y + dy[i];
+        w_coord_t nz = z + dz[i];
+
+        struct block_data nb;
+        if (!server_world_get_block(&s->world, nx, ny, nz, &nb))
+            continue;
+
+        const struct block* b = blocks[nb.type];
+        if (b && b->onNeighbourBlockChange) {
+            struct block_info info = {
+                .block      = &nb,
+                .neighbours = NULL,
+                .x          = nx,
+                .y          = ny,
+                .z          = nz
+            };
+            b->onNeighbourBlockChange(s, &info);
+        }
+    }
+}
+

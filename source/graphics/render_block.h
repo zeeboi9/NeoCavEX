@@ -65,11 +65,19 @@ size_t render_block_cross(struct displaylist* d, struct block_info* this,
 						  enum side side, struct block_info* it,
 						  uint8_t* vertex_light, bool count_only);
 
+size_t render_block_tree2d(struct displaylist* d, struct block_info* this,
+						  enum side side, struct block_info* it,
+						  uint8_t* vertex_light, bool count_only);
+
 size_t render_block_fluid(struct displaylist* d, struct block_info* this,
 						  enum side side, struct block_info* it,
 						  uint8_t* vertex_light, bool count_only);
 
 size_t render_block_full(struct displaylist* d, struct block_info* this,
+						 enum side side, struct block_info* it,
+						 uint8_t* vertex_light, bool count_only);
+
+size_t render_block_furnace(struct displaylist* d, struct block_info* this,
 						 enum side side, struct block_info* it,
 						 uint8_t* vertex_light, bool count_only);
 
@@ -109,6 +117,10 @@ size_t render_block_rail(struct displaylist* d, struct block_info* this,
 						 enum side side, struct block_info* it,
 						 uint8_t* vertex_light, bool count_only);
 
+size_t render_block_redstone_wire(struct displaylist* d, struct block_info* this,
+						 enum side side, struct block_info* it,
+						 uint8_t* vertex_light, bool count_only);
+
 size_t render_block_ladder(struct displaylist* d, struct block_info* this,
 						   enum side side, struct block_info* it,
 						   uint8_t* vertex_light, bool count_only);
@@ -118,6 +130,10 @@ size_t render_block_cake(struct displaylist* d, struct block_info* this,
 						 uint8_t* vertex_light, bool count_only);
 
 size_t render_block_trapdoor(struct displaylist* d, struct block_info* this,
+							 enum side side, struct block_info* it,
+							 uint8_t* vertex_light, bool count_only);
+
+size_t render_block_sign(struct displaylist* d, struct block_info* this,
 							 enum side side, struct block_info* it,
 							 uint8_t* vertex_light, bool count_only);
 

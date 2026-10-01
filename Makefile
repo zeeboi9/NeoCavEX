@@ -32,7 +32,7 @@ INCLUDES	:=
 # options for code generation
 #---------------------------------------------------------------------------------
 
-CFLAGS		=	-std=c99 -pedantic -Wextra -Wno-unused-parameter -flto=auto -O3 -Wall -DNDEBUG -DPLATFORM_WII $(MACHDEP) $(INCLUDE) -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600
+CFLAGS		=	-std=c99 -pedantic -Wextra -Wno-unused-parameter -flto=auto -O3 -Wall -DNDEBUG -DPLATFORM_WII $(MACHDEP) $(INCLUDE) -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600 -fno-math-errno -Wdouble-promotion -falign-functions=16 -falign-loops=16
 CXXFLAGS	=	$(CFLAGS)
 
 LDFLAGS	=	$(MACHDEP) -Wl,-Map,$(notdir $@).map

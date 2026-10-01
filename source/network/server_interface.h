@@ -24,15 +24,20 @@
 #include <m-lib/m-string.h>
 #include <stdbool.h>
 
+#define MAX_PLAYER_HEALTH 160
+#define HEALTH_PER_HEART 16
+
 enum server_rpc_type {
 	SRPC_PLAYER_POS,
 	SRPC_LOAD_WORLD,
+	SRPC_ENTITY_ATTACK,
 	SRPC_UNLOAD_WORLD,
 	SRPC_HOTBAR_SLOT,
 	SRPC_BLOCK_PLACE,
 	SRPC_BLOCK_DIG,
 	SRPC_WINDOW_CLICK,
 	SRPC_WINDOW_CLOSE,
+	SRPC_TOGGLE_PAUSE,
 };
 
 struct server_rpc {
@@ -41,6 +46,7 @@ struct server_rpc {
 		struct {
 			double x, y, z;
 			float rx, ry;
+			float vel_y;
 		} player_pos;
 		struct {
 			string_t name;
@@ -66,6 +72,9 @@ struct server_rpc {
 		struct {
 			uint8_t window;
 		} window_close;
+		struct {
+			uint32_t entity_id;
+		} entity_attack;
 	} payload;
 };
 

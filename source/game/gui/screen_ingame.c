@@ -21,13 +21,16 @@
 
 #include "../../block/blocks.h"
 #include "../../graphics/gfx_util.h"
+#include "../../graphics/gfx_settings.h"
 #include "../../graphics/gui_util.h"
 #include "../../graphics/render_model.h"
 #include "../../network/server_interface.h"
+#include "../../network/server_local.h"
 #include "../../particle.h"
 #include "../../platform/gfx.h"
 #include "../../platform/input.h"
 #include "../game_state.h"
+#include "../../daytime.h"
 
 #include <malloc.h>
 
@@ -39,6 +42,23 @@ static void screen_ingame_reset(struct screen* s, int width, int height) {
 }
 
 void screen_ingame_render3D(struct screen* s, mat4 view) {
+	
+	if (gstate.world_loaded && gstate.camera_hit.entity_hit) {
+    struct entity *e = *dict_entity_get(gstate.entities,
+                                        gstate.camera_hit.entity_id);
+		if (e) {
+			if (e->type != 0 && e->type != 1){
+			gfx_blending(MODE_BLEND);
+			gfx_alpha_test(false);
+
+			gutil_entity_selection(view, e);
+
+			gfx_blending(MODE_OFF);
+			gfx_alpha_test(true);
+			}
+		}
+	}
+
 	if(gstate.world_loaded && gstate.camera_hit.hit) {
 		struct block_data blk
 			= world_get_block(&gstate.world, gstate.camera_hit.x,
@@ -62,6 +82,8 @@ void screen_ingame_render3D(struct screen* s, mat4 view) {
 		gfx_blending(MODE_OFF);
 		gfx_alpha_test(true);
 	}
+
+	
 
 	float place_lerp = 0.0F;
 	size_t slot = inventory_get_hotbar(
@@ -112,7 +134,9 @@ void screen_ingame_render3D(struct screen* s, mat4 view) {
 								   -0.72F - sinHalfCircle * 0.2F});
 		glm_rotate_y(model, glm_rad(45.0F), model);
 		glm_rotate_y(model, glm_rad(-sinHalfCircleWeird * 20.0F), model);
+		#ifdef GFX_3D_ELEMENTS
 		glm_rotate_z(model, glm_rad(-sinf(sqrtLerpPI) * 20.0F), model);
+		#endif
 		glm_rotate_x(model, glm_rad(-sinf(sqrtLerpPI) * 80.0F), model);
 
 		glm_scale_uni(model, 0.4F);
@@ -155,6 +179,59 @@ void screen_ingame_render3D(struct screen* s, mat4 view) {
 }
 
 static void screen_ingame_update(struct screen* s, float dt) {
+	// left click interaction
+	if (gstate.camera_hit.entity_hit
+	    && input_pressed(IB_ACTION1)
+	    && !gstate.digging.active)
+	{
+	    struct entity **ptr = dict_entity_get(
+	        gstate.entities,
+	        gstate.camera_hit.entity_id
+	    );
+	    if (ptr) {
+	        struct entity *e = *ptr;
+	        if (e && e->onLeftClick) {
+	            e->onLeftClick(e);
+	            // Optionele punch‐animatie (zoals eerder)
+	            struct item_data held;
+	            if (inventory_get_hotbar_item(
+	                   windowc_get_latest(gstate.windows[WINDOWC_INVENTORY]), &held))
+	            {
+	                gstate.held_item_animation.punch.start = time_get();
+	                gstate.held_item_animation.punch.place = false;
+	            }
+	            return;
+	        }
+	    }
+	}
+
+	// right click interaction met entity via dict_entity_get
+	if (gstate.camera_hit.entity_hit
+	    && input_pressed(IB_ACTION2)
+	    && !gstate.digging.active)
+	{
+	    struct entity **ptr = dict_entity_get(
+	        gstate.entities,
+	        gstate.camera_hit.entity_id
+	    );
+	    if (ptr) {
+	        struct entity *e = *ptr;
+	        if (e && e->onRightClick) {
+	            e->onRightClick(e);
+	            struct item_data held;
+	            if (inventory_get_hotbar_item(
+	                   windowc_get_latest(gstate.windows[WINDOWC_INVENTORY]), &held))
+	            {
+	                gstate.held_item_animation.punch.start = time_get();
+	                gstate.held_item_animation.punch.place = false;
+	            }
+	            return;
+	        }
+	    }
+	}
+
+
+// block place
 	if(gstate.camera_hit.hit && input_pressed(IB_ACTION2)
 	   && !gstate.digging.active) {
 		svin_rpc_send(&(struct server_rpc) {
@@ -172,6 +249,7 @@ static void screen_ingame_update(struct screen* s, float dt) {
 		}
 	}
 
+	// block dig
 	if(gstate.digging.active) {
 		struct block_data blk
 			= world_get_block(&gstate.world, gstate.digging.x, gstate.digging.y,
@@ -322,9 +400,11 @@ static void screen_ingame_update(struct screen* s, float dt) {
 	}
 
 	if(input_pressed(IB_HOME)) {
-		screen_set(&screen_select_world);
+		screen_set(&screen_pause);
+		gstate.paused = true;
+
 		svin_rpc_send(&(struct server_rpc) {
-			.type = SRPC_UNLOAD_WORLD,
+			.type = SRPC_TOGGLE_PAUSE,
 		});
 	}
 
@@ -334,25 +414,53 @@ static void screen_ingame_update(struct screen* s, float dt) {
 
 static void screen_ingame_render2D(struct screen* s, int width, int height) {
 	char str[64];
-	sprintf(str, GAME_NAME " Alpha %i.%i.%i (impl. B1.7.3)", VERSION_MAJOR,
-			VERSION_MINOR, VERSION_PATCH);
-	gutil_text(4, 4 + 17 * 0, str, 16, true);
-
 #ifndef NDEBUG
+
+	sprintf(str, GAME_NAME " Alpha %i.%i.%i_f%i (impl. B1.7.3)", VERSION_MAJOR,
+			VERSION_MINOR, VERSION_PATCH, VERSION_FORK);
+	gutil_text(4, 4 + (GFX_GUI_SCALE * 8 + 1) * 0, str, GFX_GUI_SCALE * 8, true);
+
+
 	sprintf(str, "%0.1f fps, wait: gpu %0.1fms, vsync %0.1fms",
 			gstate.stats.fps, gstate.stats.dt_gpu * 1000.0F,
 			gstate.stats.dt_vsync * 1000.0F);
-	gutil_text(4, 4 + 17 * 1, str, 16, true);
+	gutil_text(4, 4 + (GFX_GUI_SCALE * 8 + 1) * 1, str, GFX_GUI_SCALE * 8, true);
 
 	sprintf(str, "%zu chunks", gstate.stats.chunks_rendered);
-	gutil_text(4, 4 + 17 * 2, str, 16, true);
+	gutil_text(4, 4 + (GFX_GUI_SCALE * 8 + 1) * 2, str, GFX_GUI_SCALE * 8, true);
 
 	sprintf(str, "(%0.1f, %0.1f, %0.1f) (%0.1f, %0.1f)", gstate.camera.x,
 			gstate.camera.y, gstate.camera.z, glm_deg(gstate.camera.rx),
 			glm_deg(gstate.camera.ry));
-	gutil_text(4, 4 + 17 * 3, str, 16, true);
+	gutil_text(4, 4 + (GFX_GUI_SCALE * 8 + 1) * 3, str, GFX_GUI_SCALE * 8, true);
 
-	if(gstate.camera_hit.hit) {
+float time = gstate.world_time + time_diff_s(gstate.world_time_start, time_get()) * 1000.0f / 50.0f;
+float day_ticks = fmodf(time, 24000.0f);
+float angle = daytime_celestial_angle(day_ticks / 24000.0f);
+sprintf(str, "time: %.0f (%.0f)  angle: %.3f", time, day_ticks, angle);
+	gutil_text(4, 4 + (GFX_GUI_SCALE * 8 + 1) * 4, str, GFX_GUI_SCALE * 8, true);
+
+	if (gstate.camera_hit.entity_hit) {
+		struct entity **ptr = dict_entity_get(
+		    gstate.entities,
+		    gstate.camera_hit.entity_id
+		);
+		if (ptr) {
+		    struct entity *e = *ptr;
+		    const char *ename = e->name;
+		    sprintf(str, "(%i, %i, %i), %s (%u)",
+		            gstate.camera_hit.x,
+		            gstate.camera_hit.y,
+		            gstate.camera_hit.z,
+		            ename, e->id);
+		} else {
+		    sprintf(str, "(%i, %i, %i)",
+		            gstate.camera_hit.x,
+		            gstate.camera_hit.y,
+		            gstate.camera_hit.z);
+		}
+		gutil_text(4, 4 + (GFX_GUI_SCALE * 8 + 1) * 5, str, GFX_GUI_SCALE * 8, true);
+	} else	if(gstate.camera_hit.hit) {
 		struct block_data bd
 			= world_get_block(&gstate.world, gstate.camera_hit.x,
 							  gstate.camera_hit.y, gstate.camera_hit.z);
@@ -361,15 +469,35 @@ static void screen_ingame_render2D(struct screen* s, int width, int height) {
 				block_side_name(gstate.camera_hit.side), gstate.camera_hit.x,
 				gstate.camera_hit.y, gstate.camera_hit.z, b ? b->name : NULL,
 				bd.type, bd.metadata);
-		gutil_text(4, 4 + 17 * 5, str, 16, true);
+		gutil_text(4, 4 + (GFX_GUI_SCALE * 8 + 1) * 5, str, GFX_GUI_SCALE * 8, true);
 	}
 #endif
 
-	int icon_offset = 32;
+	int icon_offset = GFX_GUI_SCALE * 16;
 	icon_offset += gutil_control_icon(icon_offset, IB_INVENTORY, "Inventory");
 	icon_offset += gutil_control_icon(icon_offset, IB_JUMP, "Jump");
 
-	if(gstate.camera_hit.hit) {
+	if (gstate.camera_hit.entity_hit) {
+	    struct entity **ptr = dict_entity_get(
+	        gstate.entities,
+	        gstate.camera_hit.entity_id
+	    );
+	    if (ptr) {
+	        struct entity *e = *ptr;
+	        if (e->leftClickText) {
+	            icon_offset += gutil_control_icon(icon_offset,
+	                                              IB_ACTION1,
+	                                              e->leftClickText);
+	        }
+	        if (e->rightClickText) {
+	            icon_offset += gutil_control_icon(icon_offset,
+	                                              IB_ACTION2,
+	                                              e->rightClickText);
+	        }
+	    }
+	}
+
+	else if (gstate.camera_hit.hit) {
 		struct item_data item;
 		struct block_data bd
 			= world_get_block(&gstate.world, gstate.camera_hit.x,
@@ -390,16 +518,16 @@ static void screen_ingame_render2D(struct screen* s, int width, int height) {
 		icon_offset += gutil_control_icon(icon_offset, IB_ACTION1, "Punch");
 	}
 
-	icon_offset += gutil_control_icon(icon_offset, IB_HOME, "Save & quit");
+	icon_offset += gutil_control_icon(icon_offset, IB_HOME, "Pause");
 
 	// draw hotbar
 	gfx_bind_texture(&texture_gui2);
-	gutil_texquad((width - 182 * 2) / 2, height - 32 * 8 / 5 - 22 * 2, 0, 0,
-				  182, 22, 182 * 2, 22 * 2);
+	gutil_texquad((width - 182 * GFX_GUI_SCALE) / 2, height - (GFX_GUI_SCALE * 16) * 8 / 5 - 22 * GFX_GUI_SCALE, 0, 0,
+				  182, 22, 182 * GFX_GUI_SCALE, 22 * GFX_GUI_SCALE);
 
 	gfx_blending(MODE_INVERT);
-	gutil_texquad((width - 16 * 2) / 2, (height - 16 * 2) / 2, 0, 229, 16, 16,
-				  16 * 2, 16 * 2);
+	gutil_texquad((width - 16 * GFX_GUI_SCALE) / 2, (height - 16 * GFX_GUI_SCALE) / 2, 0, 229, GFX_GUI_SCALE, GFX_GUI_SCALE,
+				  16 * GFX_GUI_SCALE, 16 * GFX_GUI_SCALE);
 
 	gfx_blending(MODE_OFF);
 
@@ -408,28 +536,41 @@ static void screen_ingame_render2D(struct screen* s, int width, int height) {
 		if(inventory_get_slot(
 			   windowc_get_latest(gstate.windows[WINDOWC_INVENTORY]),
 			   k + INVENTORY_SLOT_HOTBAR, &item))
-			gutil_draw_item(&item, (width - 182 * 2) / 2 + 3 * 2 + 20 * 2 * k,
-							height - 32 * 8 / 5 - 19 * 2, 0);
+			gutil_draw_item(&item, (width - 182 * GFX_GUI_SCALE) / 2 + 3 * GFX_GUI_SCALE + 20 * GFX_GUI_SCALE * k,
+							height - (GFX_GUI_SCALE * 16) * 8 / 5 - 19 * GFX_GUI_SCALE, 0);
 	}
 
 	gfx_blending(MODE_BLEND);
 	gfx_bind_texture(&texture_gui2);
 
 	// draw hotbar selection
-	gutil_texquad((width - 182 * 2) / 2 - 2
-					  + 20 * 2
+	gutil_texquad((width - 182 * GFX_GUI_SCALE) / 2 - 2
+					  + 20 * GFX_GUI_SCALE 
 						  * inventory_get_hotbar(windowc_get_latest(
 							  gstate.windows[WINDOWC_INVENTORY])),
-				  height - 32 * 8 / 5 - 23 * 2, 208, 0, 24, 24, 24 * 2, 24 * 2);
+				  height - (GFX_GUI_SCALE * 16) * 8 / 5 - 23 * GFX_GUI_SCALE, 208, 0, 24, 24, 24 * GFX_GUI_SCALE, 24 * GFX_GUI_SCALE);
 
-	for(int k = 0; k < 10; k++) {
-		// draw hearts
-		gutil_texquad((width - 182 * 2) / 2 + k * 8 * 2,
-					  height - 32 * 8 / 5 - (22 + 10) * 2, 16, 229, 9, 9, 9 * 2,
-					  9 * 2);
-		gutil_texquad((width - 182 * 2) / 2 + k * 8 * 2,
-					  height - 32 * 8 / 5 - (22 + 10) * 2, 52, 229, 9, 9, 9 * 2,
-					  9 * 2);
+	for(int k = 0; k < MAX_PLAYER_HEALTH/HEALTH_PER_HEART; k++) {
+		// draw black hearts
+		gutil_texquad((width - 182 * GFX_GUI_SCALE) / 2 + k * 8 * GFX_GUI_SCALE,
+				  height - (GFX_GUI_SCALE * 16) * 8 / 5 - (22 + 10) * GFX_GUI_SCALE, 16, 229, 9, 9, 9 * GFX_GUI_SCALE,
+					  9 * GFX_GUI_SCALE);
+	}
+	for(int k = 0; k < (gstate.local_player->health/HEALTH_PER_HEART); k++) {
+		// draw red hearts
+		gutil_texquad((width - 182 * GFX_GUI_SCALE) / 2 + k * 8 * GFX_GUI_SCALE,
+					  height - (GFX_GUI_SCALE * 16) * 8 / 5 - (22 + 10) * GFX_GUI_SCALE, 52, 229, 9, 9, 9 * GFX_GUI_SCALE,
+				  9 * GFX_GUI_SCALE);
+	}
+
+	// draw oxygen bar if underwater
+	if(gstate.in_water && gstate.oxygen >= OXYGEN_THRESHOLD) {
+		for(int k = 0; k < ((gstate.oxygen - OXYGEN_THRESHOLD) / 32); k++) {
+			gutil_texquad((width - 182 * GFX_GUI_SCALE) / 2 + k * 8 * GFX_GUI_SCALE,
+							height - (GFX_GUI_SCALE * 20) * 8 / 5 - (22 + 10) * GFX_GUI_SCALE, 17, 249, 9, 9, 9 * GFX_GUI_SCALE,
+						9 * GFX_GUI_SCALE);
+
+		}
 	}
 }
 

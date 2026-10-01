@@ -29,5 +29,7 @@ void gutil_clouds(mat4 view_matrix, float daytime);
 void gutil_sky_box(mat4 view_matrix, float daytime, vec3 color_top,
 				   vec3 color_bottom);
 void gutil_block_selection(mat4 view_matrix, struct block_info* this);
+void gutil_entity_selection(mat4 view_matrix, const struct entity *e);
+
 
 #endif

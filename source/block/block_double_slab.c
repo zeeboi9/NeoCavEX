@@ -54,7 +54,7 @@ static uint8_t getTextureIndex(struct block_info* this, enum side side) {
 }
 
 static size_t getDroppedItem(struct block_info* this, struct item_data* it,
-							 struct random_gen* g) {
+							 struct random_gen* g, struct server_local* s) {
 	if(it) {
 		it->id = BLOCK_SLAB;
 		it->durability = this->block->metadata;
@@ -91,6 +91,7 @@ struct block block_double_slab = {
 		.max_stack = 64,
 		.renderItem = render_item_block,
 		.onItemPlace = block_place_default,
+		.fuel = 0,
 		.render_data.block.has_default = false,
 		.armor.is_armor = false,
 		.tool.type = TOOL_TYPE_ANY,

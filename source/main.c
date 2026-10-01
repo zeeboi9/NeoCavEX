@@ -33,6 +33,7 @@ struct ini_t {
   char *data;
   char *end;
 };
+#include <gccore.h>
 #endif
 
 #include "chunk_mesher.h"
@@ -41,6 +42,8 @@ struct ini_t {
 #include "game/gui/screen.h"
 #include "graphics/gfx_util.h"
 #include "graphics/gui_util.h"
+#include "graphics/gfx_settings.h"
+#include "graphics/render_entity.h"
 #include "item/recipe.h"
 #include "network/client_interface.h"
 #include "network/server_interface.h"
@@ -58,6 +61,9 @@ struct ini_t {
 ini_t *configfile = NULL;
 
 int main(void) {
+	float daytime, tick_delta;
+	bool render_world;
+
 	gstate.quit = false;
 	gstate.camera = (struct camera) {
 		.x = 0, .y = 0, .z = 0, .rx = 0, .ry = 0, .controller = {0, 0, 0}};
@@ -69,12 +75,20 @@ int main(void) {
 	gstate.held_item_animation.switch_item.start = time_get();
 	gstate.digging.cooldown = time_get();
 	gstate.digging.active = false;
+	gstate.paused = false;
 
 	rand_gen_seed(&gstate.rand_src);
 
 #ifdef PLATFORM_WII
 	fatInitDefault();
+<<<<<<< HEAD
 	configfile = ini_load("sd:/apps/cavex/settings/controls.ini");
+=======
+	#ifndef NDEBUG
+		SYS_STDIO_Report(true);
+		SYS_Report("[INIT] STDIO redirection is now active\n");
+	#endif
+>>>>>>> other-fork/master
 #endif
 
 	config_create(&gstate.config_user, "config.json");
@@ -82,6 +96,8 @@ int main(void) {
 	input_init();
 	blocks_init();
 	items_init();
+	render_entity_init();
+
 	recipe_init();
 	gfx_setup();
 	gutil_init();
@@ -101,6 +117,8 @@ int main(void) {
 
 	dict_entity_init(gstate.entities);
 	gstate.local_player = NULL;
+	gstate.in_water = false;
+	gstate.oxygen = MAX_OXYGEN;
 
 	struct server_local server;
 	server_local_create(&server);
@@ -114,54 +132,98 @@ int main(void) {
 		gstate.stats.fps = 1.0F / gstate.stats.dt;
 		last_frame = this_frame;
 
-		float daytime
+		if(!gstate.paused) daytime
 			= (float)((gstate.world_time
-					   + time_diff_ms(gstate.world_time_start, this_frame)
-						   / DAY_TICK_MS)
-					  % DAY_LENGTH_TICKS)
+					 + time_diff_ms(gstate.world_time_start, this_frame)
+						 / DAY_TICK_MS)
+						% DAY_LENGTH_TICKS)
 			/ (float)DAY_LENGTH_TICKS;
 
 		clin_update();
 
-		float tick_delta = time_diff_s(last_tick, time_get()) / 0.05F;
+		tick_delta = time_diff_s(last_tick, time_get()) / 0.05F;
 
 		while(tick_delta >= 1.0F) {
 			last_tick = time_add_ms(last_tick, 50);
 			tick_delta -= 1.0F;
-			particle_update();
-			entities_client_tick(gstate.entities);
+			if(!gstate.paused) {
+				particle_update();
+				entities_client_tick(gstate.entities);
+			}
 		}
 
 		if(gstate.local_player)
 			camera_attach(&gstate.camera, gstate.local_player, tick_delta,
-						  gstate.stats.dt);
+							gstate.stats.dt);
+		// update particle‐system with current camera pos for spawn‐culling
+		particle_set_camera((vec3){
+		    gstate.camera.x,
+		    gstate.camera.y,
+		    gstate.camera.z
+		});
 
-		bool render_world
+		render_world
 			= gstate.current_screen->render_world && gstate.world_loaded;
-		bool in_water = false;
+		bool in_water_new = false;
 
 		if(render_world) {
 			struct block_data blk = world_get_block(
 				&gstate.world, floorf(gstate.camera.x),
 				floorf(gstate.camera.y + 0.1F), floorf(gstate.camera.z));
-			in_water
+			in_water_new
 				= blk.type == BLOCK_WATER_FLOW || blk.type == BLOCK_WATER_STILL;
+			#ifndef GFX_FANCY_LIQUIDS
+			if(gstate.in_water != in_water_new) {
+			#endif
+				gstate.in_water = in_water_new;
+			#ifndef GFX_FANCY_LIQUIDS
+				world_redraw_chunks(&gstate.world);
+			}
+			#endif
 		}
 
-		camera_update(&gstate.camera, in_water);
+		camera_update(&gstate.camera, gstate.in_water);
 
 		if(render_world) {
 			world_pre_render(&gstate.world, &gstate.camera, gstate.camera.view);
 
-			struct camera* c = &gstate.camera;
-			camera_ray_pick(&gstate.world, c->x, c->y, c->z,
-							c->x + sinf(c->rx) * sinf(c->ry) * 4.5F,
-							c->y + cosf(c->ry) * 4.5F,
-							c->z + cosf(c->rx) * sinf(c->ry) * 4.5F,
-							&gstate.camera_hit);
+			{
+				// 1) Bereken eerst de ray‐origin en direction uit de camera
+				vec3 origin, dir;
+				camera_get_ray(&gstate.camera, origin, dir);
+
+				// 2) Probeer eerst een entiteit te raken binnen 4.5 eenheid
+				float tHit;
+				struct entity *hitE = raycast_entity(&gstate.entities,
+													 origin, dir,
+													 4.5f,
+													 &tHit);
+				if (hitE == gstate.local_player) {
+				    hitE = NULL;
+				}
+
+				if (hitE) {
+					gstate.camera_hit.entity_hit = true;
+					gstate.camera_hit.entity_id  = hitE->id;
+					gstate.camera_hit.hit = false;
+				}
+				else {
+					gstate.camera_hit.entity_hit = false;
+					gstate.camera_hit.entity_id  = 0;
+
+					camera_ray_pick(&gstate.world,
+									gstate.camera.x, gstate.camera.y, gstate.camera.z,
+									gstate.camera.x + sinf(gstate.camera.rx) * sinf(gstate.camera.ry) * 4.5F,
+									gstate.camera.y +            cosf(gstate.camera.ry) * 4.5F,
+									gstate.camera.z + cosf(gstate.camera.rx) * sinf(gstate.camera.ry) * 4.5F,
+									&gstate.camera_hit);
+				}
+			}
 		} else {
-			world_pre_render_clear(&gstate.world);
-			gstate.camera_hit.hit = false;
+		    world_pre_render_clear(&gstate.world);
+		    gstate.camera_hit.hit        = false;
+		    gstate.camera_hit.entity_hit = false;
+		    gstate.camera_hit.entity_id  = 0;
 		}
 
 		world_update_lighting(&gstate.world);
@@ -169,75 +231,95 @@ int main(void) {
 
 		if(gstate.current_screen->update)
 			gstate.current_screen->update(gstate.current_screen,
-										  gstate.stats.dt);
+											gstate.stats.dt);
 
 		gfx_flip_buffers(&gstate.stats.dt_gpu, &gstate.stats.dt_vsync);
 
-		// must not modify displaylists while still rendering!
-		chunk_mesher_receive();
-		world_render_completed(&gstate.world, render_world);
+		if(!gstate.paused) {
+			// must not modify displaylists while still rendering!
+			chunk_mesher_receive();
+			world_render_completed(&gstate.world, render_world);
 
-		vec3 top_plane_color, bottom_plane_color, atmosphere_color;
-		daytime_sky_colors(daytime, top_plane_color, bottom_plane_color,
-						   atmosphere_color);
+			vec3 top_plane_color, bottom_plane_color, atmosphere_color;
+			daytime_sky_colors(daytime, top_plane_color, bottom_plane_color,
+								 atmosphere_color);
 
-		if(render_world) {
-			gfx_clear_buffers(atmosphere_color[0], atmosphere_color[1],
-							  atmosphere_color[2]);
-		} else {
-			gfx_clear_buffers(128, 128, 128);
-		}
+			if(render_world) {
+				gfx_clear_buffers(atmosphere_color[0], atmosphere_color[1],
+									atmosphere_color[2]);
+			} else {
+				gfx_clear_buffers(128, 128, 128);
+			}
 
-		gfx_fog_color(atmosphere_color[0], atmosphere_color[1],
-					  atmosphere_color[2]);
+			gfx_fog_color(atmosphere_color[0], atmosphere_color[1],
+							atmosphere_color[2]);
 
-		gfx_mode_world();
-		gfx_matrix_projection(gstate.camera.projection, true);
+			gfx_mode_world();
+			gfx_matrix_projection(gstate.camera.projection, true);
 
-		if(render_world) {
-			gfx_update_light(daytime_brightness(daytime),
-							 world_dimension_light(&gstate.world));
+			if(render_world) {
+				gfx_update_light(daytime_brightness(daytime),
+								 world_dimension_light(&gstate.world));
 
+<<<<<<< HEAD
 			if(gstate.world.dimension == WORLD_DIM_OVERWORLD)
 				gutil_sky_box(gstate.camera.view_origin, daytime,
 							  top_plane_color, bottom_plane_color);
+=======
+				if(gstate.world.dimension == WORLD_DIM_OVERWORLD)
+					gutil_sky_box(gstate.camera.view,
+									daytime_celestial_angle(daytime), top_plane_color,
+									bottom_plane_color);
+>>>>>>> other-fork/master
 
-			gstate.stats.chunks_rendered
-				= world_render(&gstate.world, &gstate.camera, false);
-		} else {
-			gstate.stats.chunks_rendered = 0;
-		}
+				gstate.stats.chunks_rendered
+					= world_render(&gstate.world, &gstate.camera, false);
+			} else {
+				gstate.stats.chunks_rendered = 0;
+			}
 
-		if(gstate.current_screen->render3D) {
-			gfx_fog(false);
-			gstate.current_screen->render3D(gstate.current_screen,
-											gstate.camera.view);
-		}
+			if(gstate.current_screen->render3D) {
+				gfx_fog(false);
+				gstate.current_screen->render3D(gstate.current_screen,
+												gstate.camera.view);
+			}
 
-		if(render_world) {
-			gfx_fog(false);
-			particle_render(
-				gstate.camera.view,
-				(vec3) {gstate.camera.x, gstate.camera.y, gstate.camera.z},
-				tick_delta);
-			entities_client_render(gstate.entities, &gstate.camera, tick_delta);
-			gfx_fog(true);
+			if(render_world) {
+				gfx_fog(false);
+				particle_render(
+					gstate.camera.view,
+					(vec3) {gstate.camera.x, gstate.camera.y, gstate.camera.z},
+					tick_delta);
+				entities_client_render(gstate.entities, &gstate.camera, tick_delta);
+				gfx_fog(true);
 
-			world_render(&gstate.world, &gstate.camera, true);
+				#ifdef GFX_FANCY_LIQUIDS
+				world_render(&gstate.world, &gstate.camera, true);
+				#endif
 
+<<<<<<< HEAD
 			if(gstate.world.dimension == WORLD_DIM_OVERWORLD)
 				gutil_clouds(gstate.camera.view, daytime);
 		}
+=======
+				#ifdef GFX_CLOUDS
+				if(gstate.world.dimension == WORLD_DIM_OVERWORLD)
+					gutil_clouds(gstate.camera.view, daytime_brightness(daytime));
+				#endif
+			}
+>>>>>>> other-fork/master
 
-		gfx_mode_gui();
+			gfx_mode_gui();
 
-		if(in_water) {
-			gfx_bind_texture(&texture_water);
-			gutil_texquad_col(0, 0, -gstate.camera.rx / GLM_PI * 256,
-							  gstate.camera.ry / GLM_PI * 256, 512,
-							  512 * (float)gfx_height() / (float)gfx_width(),
-							  gfx_width(), gfx_height(), 0xFF, 0xFF, 0xFF,
-							  0x80);
+			if(gstate.in_water) {
+				gfx_bind_texture(&texture_water);
+				gutil_texquad_col(0, 0, -gstate.camera.rx / GLM_PI * 256,
+									gstate.camera.ry / GLM_PI * 256, 512,
+									512 * (float)gfx_height() / (float)gfx_width(),
+									gfx_width(), gfx_height(), 0xFF, 0xFF, 0xFF,
+									0x80);
+			}
+
 		}
 
 		if(gstate.current_screen->render2D)

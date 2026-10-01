@@ -75,7 +75,7 @@ static bool onItemPlace(struct server_local* s, struct item_data* it,
 		default: return false;
 	}
 
-	server_world_set_block(&s->world, where->x, where->y, where->z,
+	server_world_set_block(s, where->x, where->y, where->z,
 						   (struct block_data) {
 							   .type = it->id,
 							   .metadata = metadata,
@@ -113,6 +113,7 @@ struct block block_ladder = {
 		.max_stack = 64,
 		.renderItem = render_item_flat,
 		.onItemPlace = onItemPlace,
+		.fuel = 1,
 		.armor.is_armor = false,
 		.tool.type = TOOL_TYPE_ANY,
 	},

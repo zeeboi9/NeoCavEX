@@ -41,7 +41,7 @@ static uint8_t getTextureIndex(struct block_info* this, enum side side) {
 }
 
 static size_t getDroppedItem(struct block_info* this, struct item_data* it,
-							 struct random_gen* g) {
+							 struct random_gen* g, struct server_local* s) {
 	if(it) {
 		it->id = ITEM_REED;
 		it->durability = 0;
@@ -72,7 +72,7 @@ static void onRandomTick(struct server_local* s, struct block_info* this) {
 	}
 
 	if(!has_support) {
-		server_world_set_block(&s->world, this->x, this->y, this->z,
+		server_world_set_block(s, this->x, this->y, this->z,
 							   (struct block_data) {
 								   .type = BLOCK_AIR,
 								   .metadata = 0,
@@ -84,7 +84,7 @@ static void onRandomTick(struct server_local* s, struct block_info* this) {
 			if(!server_world_get_block(&s->world, this->x, this->y + 1, this->z,
 									   &above)
 			   || above.type == BLOCK_AIR)
-				server_world_set_block(&s->world, this->x, this->y + 1, this->z,
+				server_world_set_block(s, this->x, this->y + 1, this->z,
 									   (struct block_data) {
 										   .type = BLOCK_REED,
 										   .metadata = 0,
@@ -92,7 +92,7 @@ static void onRandomTick(struct server_local* s, struct block_info* this) {
 		}
 
 		this->block->metadata++;
-		server_world_set_block(&s->world, this->x, this->y, this->z,
+		server_world_set_block(s, this->x, this->y, this->z,
 							   *this->block);
 	}
 }
@@ -126,6 +126,7 @@ struct block block_reed = {
 		.max_stack = 64,
 		.renderItem = render_item_flat,
 		.onItemPlace = block_place_default,
+		.fuel = 0,
 		.armor.is_armor = false,
 		.tool.type = TOOL_TYPE_ANY,
 	},

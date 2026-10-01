@@ -77,7 +77,7 @@ static bool onItemPlace(struct server_local* s, struct item_data* it,
 			   (vec3) {s->player.x, s->player.y, s->player.z}, &blk_info))
 			return false;
 
-		server_world_set_block(&s->world, on->x, on->y, on->z, blk);
+		server_world_set_block(s, on->x, on->y, on->z, blk);
 		return true;
 	} else if(where->block->type == BLOCK_AIR) {
 		struct block_data blk = (struct block_data) {
@@ -94,7 +94,7 @@ static bool onItemPlace(struct server_local* s, struct item_data* it,
 			   (vec3) {s->player.x, s->player.y, s->player.z}, &blk_info))
 			return false;
 
-		server_world_set_block(&s->world, where->x, where->y, where->z, blk);
+		server_world_set_block(s, where->x, where->y, where->z, blk);
 		return true;
 	}
 
@@ -102,7 +102,7 @@ static bool onItemPlace(struct server_local* s, struct item_data* it,
 }
 
 static size_t getDroppedItem(struct block_info* this, struct item_data* it,
-							 struct random_gen* g) {
+							 struct random_gen* g, struct server_local* s) {
 	if(it) {
 		it->id = this->block->type;
 		it->durability = this->block->metadata;
@@ -140,6 +140,7 @@ struct block block_slab = {
 		.max_stack = 64,
 		.renderItem = render_item_block,
 		.onItemPlace = onItemPlace,
+		.fuel = 0,
 		.render_data.block.has_default = false,
 		.armor.is_armor = false,
 		.tool.type = TOOL_TYPE_ANY,

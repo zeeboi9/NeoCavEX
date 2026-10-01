@@ -54,13 +54,20 @@ struct tex_gfx {
 
 extern struct tex_gfx texture_fog;
 extern struct tex_gfx texture_terrain;
+extern struct tex_gfx texture_particles;
 extern struct tex_gfx texture_items;
+extern struct tex_gfx texture_mobs;
+extern struct tex_gfx texture_minecart;
+extern struct tex_gfx texture_creeper;
+extern struct tex_gfx texture_pig;
 extern struct tex_gfx texture_font;
 extern struct tex_gfx texture_anim;
 extern struct tex_gfx texture_gui_inventory;
 extern struct tex_gfx texture_gui_crafting;
 extern struct tex_gfx texture_gui_furnace;
 extern struct tex_gfx texture_gui_buttons;
+extern struct tex_gfx texture_gui_chest;
+extern struct tex_gfx texture_gui_iron_chest;
 extern struct tex_gfx texture_gui2;
 extern struct tex_gfx texture_controls;
 extern struct tex_gfx texture_pointer;

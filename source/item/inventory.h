@@ -58,6 +58,29 @@
 #define FURNACE_SLOT_MAIN 3
 #define FURNACE_SLOT_HOTBAR 30
 
+// chest
+#define CHEST_SIZE 63
+#define CHEST_SIZE_STORAGE 27
+
+#define CHEST_SLOT_STORAGE 0
+#define CHEST_SLOT_MAIN 27
+#define CHEST_SLOT_HOTBAR 54
+
+// iron chest
+#define IRON_CHEST_SIZE 90
+#define IRON_CHEST_SIZE_STORAGE 54
+#define IRON_CHEST_SIZE_MAIN_STORAGE 27
+#define IRON_CHEST_SIZE_SIDE_STORAGE 27
+
+#define IRON_CHEST_SLOT_STORAGE 0
+#define IRON_CHEST_SLOT_MAIN_STORAGE 0
+#define IRON_CHEST_SLOT_SIDE_STORAGE 27
+#define IRON_CHEST_SLOT_MAIN 54
+#define IRON_CHEST_SLOT_HOTBAR 81
+
+// sign (characters as inventory)
+#define SIGN_SIZE 64
+
 // picked item slot
 #define SPECIAL_SLOT_PICKED_ITEM 255
 
@@ -70,6 +93,9 @@ struct inventory {
 	struct item_data* items;
 	size_t capacity;
 	int hotbar_slot;
+	w_coord_t x;
+	w_coord_t y;
+	w_coord_t z;
 	struct {
 		uint16_t action_id;
 		bool action_type;
@@ -94,7 +120,7 @@ struct inventory_logic {
 ILIST_DEF(ilist_inventory, struct inventory, M_POD_OPLIST)
 
 bool inventory_create(struct inventory* inv, struct inventory_logic* logic,
-					  void* user, size_t capacity);
+					  void* user, size_t capacity, w_coord_t x, w_coord_t y, w_coord_t z);
 void inventory_copy(struct inventory* inv, struct inventory* from);
 void inventory_destroy(struct inventory* inv);
 void inventory_clear(struct inventory* inv);

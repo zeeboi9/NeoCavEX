@@ -32,10 +32,11 @@
 #include "camera.h"
 #include "gui/screen.h"
 
-#define GAME_NAME "CavEX"
+#define GAME_NAME "fCavEX"
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 3
 #define VERSION_PATCH 0
+#define VERSION_FORK  2
 
 struct game_state {
 	sig_atomic_t quit;
@@ -77,6 +78,9 @@ struct game_state {
 		} switch_item;
 	} held_item_animation;
 	bool world_loaded;
+	bool in_water;
+	bool paused;
+	int oxygen;
 };
 
 extern struct game_state gstate;

@@ -210,6 +210,8 @@ void camera_attach(struct camera* c, struct entity* e, float tick_delta,
 	c->y = pos_lerp[1];
 	c->z = pos_lerp[2];
 
+	//printf("c%.03f %.03f %.03f\n", c->x, c->y, c->z);
+
 	float jdx, jdy;
 	if(e->data.local_player.capture_input && input_joystick(dt, &jdx, &jdy)) {
 		c->rx -= jdx * 2.0F;
@@ -224,3 +226,24 @@ void camera_attach(struct camera* c, struct entity* e, float tick_delta,
 	e->orient[0] = c->rx;
 	e->orient[1] = c->ry;
 }
+
+
+void camera_get_ray(const struct camera *c, vec3 origin, vec3 dir) {
+    // Set origin to the camera’s current position
+    origin[0] = c->x;
+    origin[1] = c->y;
+    origin[2] = c->z;
+
+    // Compute an endpoint 4.5 units in front of the camera using rx/ry angles
+    vec3 end;
+    end[0] = c->x + sinf(c->rx) * sinf(c->ry) * 4.5f;
+    end[1] = c->y +            cosf(c->ry) * 4.5f;
+    end[2] = c->z + cosf(c->rx) * sinf(c->ry) * 4.5f;
+
+    // Subtract origin from end to get the unnormalized direction
+    glm_vec3_sub(end, origin, dir);
+
+    // Normalize the direction vector to unit length
+    glm_vec3_normalize(dir);
+}
+

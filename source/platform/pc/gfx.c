@@ -27,6 +27,7 @@
 
 #include "../../game/game_state.h"
 #include "../../graphics/texture_atlas.h"
+#include "../../graphics/gfx_settings.h"
 #include "../../lodepng/lodepng.h"
 #include "../../util.h"
 #include "../gfx.h"
@@ -73,8 +74,8 @@ static GLuint create_shader(const char* vertex, const char* fragment) {
 	return program;
 }
 
-static int window_width = 854;
-static int window_height = 480;
+static int window_width = GFX_PC_WINDOW_WIDTH;
+static int window_height = GFX_PC_WINDOW_HEIGHT;
 GLFWwindow* window;
 
 int gfx_width() {
@@ -158,6 +159,10 @@ void gfx_setup() {
 
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CW);
+	#ifdef GFX_WIREFRAME
+	glPolygonMode(GL_FRONT, GL_LINE);
+	glPolygonMode(GL_BACK, GL_LINE);
+	#endif
 	gfx_cull_func(MODE_BACK);
 
 	gfx_depth_func(MODE_LEQUAL);

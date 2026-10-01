@@ -27,7 +27,7 @@
 
 struct item_data {
 	uint16_t id;
-	uint16_t durability;
+	uint8_t durability;
 	uint8_t count;
 };
 
@@ -99,6 +99,10 @@ enum item_type {
 	ITEM_PORKCHOP_COOKED = 320,
 	ITEM_APPLE_GOLDEN = 322,
 	ITEM_DOOR_WOOD = 324,
+	ITEM_BUCKET = 325,
+	ITEM_BUCKET_WATER = 326,
+	ITEM_BUCKET_LAVA = 327,
+	ITEM_MINECART = 328,
 	ITEM_SADDLE = 329,
 	ITEM_DOOR_IRON = 330,
 	ITEM_REDSTONE = 331,
@@ -116,6 +120,7 @@ enum item_type {
 	ITEM_SUGAR = 353,
 	ITEM_BED = 355,
 	ITEM_SHEARS = 359,
+	ITEM_EGG_ZOMBIE = 360,
 };
 
 #include "../block/blocks_data.h"
@@ -150,6 +155,7 @@ struct item {
 	bool has_damage;
 	uint16_t max_damage;
 	uint8_t max_stack;
+	uint8_t fuel;
 	void (*renderItem)(struct item*, struct item_data*, mat4, bool,
 					   enum render_item_env);
 	bool (*onItemPlace)(struct server_local*, struct item_data*,
