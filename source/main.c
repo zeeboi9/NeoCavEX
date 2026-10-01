@@ -81,14 +81,12 @@ int main(void) {
 
 #ifdef PLATFORM_WII
 	fatInitDefault();
-<<<<<<< HEAD
 	configfile = ini_load("sd:/apps/cavex/settings/controls.ini");
-=======
+
 	#ifndef NDEBUG
 		SYS_STDIO_Report(true);
 		SYS_Report("[INIT] STDIO redirection is now active\n");
 	#endif
->>>>>>> other-fork/master
 #endif
 
 	config_create(&gstate.config_user, "config.json");
@@ -261,16 +259,11 @@ int main(void) {
 				gfx_update_light(daytime_brightness(daytime),
 								 world_dimension_light(&gstate.world));
 
-<<<<<<< HEAD
-			if(gstate.world.dimension == WORLD_DIM_OVERWORLD)
-				gutil_sky_box(gstate.camera.view_origin, daytime,
-							  top_plane_color, bottom_plane_color);
-=======
+
 				if(gstate.world.dimension == WORLD_DIM_OVERWORLD)
 					gutil_sky_box(gstate.camera.view,
 									daytime_celestial_angle(daytime), top_plane_color,
 									bottom_plane_color);
->>>>>>> other-fork/master
 
 				gstate.stats.chunks_rendered
 					= world_render(&gstate.world, &gstate.camera, false);
@@ -297,17 +290,12 @@ int main(void) {
 				world_render(&gstate.world, &gstate.camera, true);
 				#endif
 
-<<<<<<< HEAD
-			if(gstate.world.dimension == WORLD_DIM_OVERWORLD)
-				gutil_clouds(gstate.camera.view, daytime);
-		}
-=======
+
 				#ifdef GFX_CLOUDS
 				if(gstate.world.dimension == WORLD_DIM_OVERWORLD)
 					gutil_clouds(gstate.camera.view, daytime_brightness(daytime));
 				#endif
 			}
->>>>>>> other-fork/master
 
 			gfx_mode_gui();
 
